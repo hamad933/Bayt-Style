@@ -1,0 +1,9 @@
+# Repository-wide ownership for governance review
+* @hamad933
+
+# Explicit governance-control ownership
+/.github/ @hamad933
+/AGENTS.md @hamad933
+/CONTRIBUTING.md @hamad933
+/README.md @hamad933
+/docs/ @hamad933
