@@ -42,7 +42,7 @@ jobs:
           grep -Fq 'RP01' README.md
           grep -Fq 'RP01-WS-REPO-GOV-BOOTSTRAP' README.md
           grep -Fq 'GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW' README.md
-          grep -Fq 'No product implementation' AGENTS.md
+          grep -Fq 'product source code' AGENTS.md
 
       - name: Enforce governance-only tracked-path allowlist
         shell: bash
