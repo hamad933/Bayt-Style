@@ -1,70 +1,84 @@
-# Execution Handoff — Governance Bootstrap
+# Execution Handoff Contract
+
+Use this document as the durable minimum contract for repository execution handoffs. Historical bootstrap evidence remains available in Git history and PR #1 and is not duplicated here.
 
 ## Identification
 
-- Project: `RP01`
-- Workstream: `RP01-WS-REPO-GOV-BOOTSTRAP`
-- Repository: `hamad933/Bayt-Style`
-- Proposal branch: `rp01/repo-governance-bootstrap`
-- Starting baseline: `EMPTY_REPOSITORY` — no commits or branch refs
-- Required stop gate: `GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW`
+- Project:
+- Workstream:
+- Change classification: `GOVERNANCE_CHANGE` / `PRODUCT_IMPLEMENTATION`
+- Repository:
+- Base branch/ref:
+- Exact base SHA:
+- Execution branch:
+- Exact head SHA:
+- Pull request number/URL:
+- Required stop gate:
 
-## Observed bootstrap evidence
+## Authorization and scope
 
-- The repository was observed with size `0`, default branch name `main`, no branch refs, and a commit-list response indicating an empty Git repository.
-- The authenticated executor was the repository owner `hamad933` with administrative and push permission.
-- Exceptional owner-authorized initial commit SHA: `54b3a61dcfb632d9b830ce27d22753f86c53c683`.
-- The initial commit created only `README.md` as the branch-establishing anchor and introduced no product code.
-- The proposal head SHA and pull-request number are recorded in the pull-request evidence because a commit cannot contain its own SHA.
+- Owner/Controller authorization reference:
+- In scope:
+- Explicit exclusions:
+- Authoritative Google Drive sources:
+- Authoritative GitHub sources:
 
-## Complete changed-path list from the empty baseline
+## Complete changed-path list
 
-1. `.github/CODEOWNERS`
-2. `.github/pull_request_template.md`
-3. `.github/workflows/governance.yml`
-4. `AGENTS.md`
-5. `CONTRIBUTING.md`
-6. `README.md`
-7. `docs/EXECUTION_HANDOFF.md`
-8. `docs/GOVERNANCE.md`
+List every changed repository path, one per line.
 
-## Governance reading order
+## Tests and checks
 
-1. `README.md`
-2. `AGENTS.md`
-3. `CONTRIBUTING.md`
-4. `docs/GOVERNANCE.md`
-5. `docs/EXECUTION_HANDOFF.md`
-6. `.github/pull_request_template.md`
+For each test/check, record:
 
-## No-product-code verification
+- command or check;
+- why it is applicable;
+- observed result;
+- unavailable/pending status when not observed.
 
-The proposed tracked tree is restricted to the eight governance paths listed above. It contains Markdown policy/evidence files, `CODEOWNERS`, and one GitHub Actions governance workflow. It contains no application source directories, product source extensions, dependency manifests, lockfiles, generated application scaffolding, runtime configuration, product tests, UI assets, commerce implementation, or deployment definitions.
+Do not infer a pass from an unobserved check.
 
-The governance workflow independently checks required files, required markers, and the governance-only path allowlist. Its observed run state belongs in the pull-request evidence and must not be inferred from this committed document.
+## Observed results
+
+Record only facts observed from repository state, local verification, GitHub, CI, or authoritative project evidence.
+
+## Product/dependency declarations
+
+- Product code introduced: `YES` / `NO`
+- Dependencies or lockfiles introduced: `YES` / `NO`
+- Runtime/application configuration introduced: `YES` / `NO`
+- Deployment configuration introduced: `YES` / `NO`
+
+If any answer is `YES`, identify the authorizing scope and changed paths.
+
+## Artifacts and evidence references
+
+Include links or identifiers for relevant:
+
+- commits;
+- pull request;
+- CI runs/checks;
+- test reports;
+- build artifacts;
+- accepted external evidence where the workstream requires it.
+
+## Limitations
+
+State actual constraints, unavailable checks, environment gaps, pending CI, or repository-setting limitations.
 
 ## Non-claims
 
-This handoff does not claim:
+State important outcomes that are deliberately not claimed, including merge/release/deployment or product acceptance when they are outside the workstream.
 
-- product implementation or product readiness;
-- Stage E/F progress;
-- a UI prototype or commerce feature;
-- provenance or acceptance of any Stage A–D artifact;
-- resolution of `MAP-046` or `MAP-047`;
-- that `RP1-PX-G01` passed or failed;
-- merge, release, deployment, or publication authorization.
+## Stop state
 
-## Known limitations
+- Exact stop gate reached:
+- Actions deliberately not performed:
+- Current CI state:
+- Current PR state:
 
-- Branch protection and rulesets are not configured by this workstream; policy controls are therefore only partially enforceable until repository settings are updated under separate authorization.
-- `CODEOWNERS` routes ownership but does not by itself require approval.
-- A workflow introduced by a pull request may require repository Actions permissions or approval before it runs.
-- The governance-only allowlist is intentionally narrow for this bootstrap and must be deliberately revised in a later authorized workstream before product paths are allowed.
-- No external A–D evidence was imported or validated.
+## Reviewer entry point
 
-## Stop state and next action
+Provide the exact PR, compare URL, commit, or evidence location the authorized reviewer should inspect next.
 
-`GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW`
-
-Next authorized action: primary review of the governance proposal. Do not merge, release, or start product implementation under this handoff.
+The executor does not self-approve. Merge, release, deployment, publication, and later workstreams require their own authority.
