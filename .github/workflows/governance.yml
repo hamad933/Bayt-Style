@@ -1,4 +1,4 @@
-name: Governance Baseline
+name: Governance Integrity
 
 on:
   pull_request:
@@ -8,15 +8,15 @@ permissions:
   contents: read
 
 jobs:
-  governance-baseline:
-    name: Verify governance-only bootstrap
+  governance-integrity:
+    name: Verify durable governance
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Check out proposal
         uses: actions/checkout@v4
 
-      - name: Verify required governance files and markers
+      - name: Verify required governance files and durable markers
         shell: bash
         run: |
           set -euo pipefail
@@ -40,31 +40,44 @@ jobs:
           done
 
           grep -Fq 'RP01' README.md
-          grep -Fq 'RP01-WS-REPO-GOV-BOOTSTRAP' README.md
-          grep -Fq 'GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW' README.md
-          grep -Fq 'product source code' AGENTS.md
+          grep -Fq 'DURABLE_GOVERNANCE_ACTIVE' README.md
+          grep -Fq 'AUTHORIZED_WORKSTREAM_REQUIRED' AGENTS.md
+          grep -Fq 'NO_SELF_APPROVAL' AGENTS.md
+          grep -Fq 'DIRECT_SOURCE_AUTHORITY' docs/GOVERNANCE.md
+          grep -Fq 'SEPARATE_RELEASE_AUTHORITY' docs/GOVERNANCE.md
+          grep -Fq 'GOVERNANCE_CHANGE' .github/pull_request_template.md
+          grep -Fq 'PRODUCT_IMPLEMENTATION' .github/pull_request_template.md
 
-      - name: Enforce governance-only tracked-path allowlist
+      - name: Reject stale bootstrap-only controls
         shell: bash
         run: |
           set -euo pipefail
 
-          mapfile -t tracked_paths < <(git ls-files)
-          unexpected=0
+          control_files=(
+            "README.md"
+            "AGENTS.md"
+            "CONTRIBUTING.md"
+            "docs/GOVERNANCE.md"
+            "docs/EXECUTION_HANDOFF.md"
+            ".github/pull_request_template.md"
+          )
 
-          for path in "${tracked_paths[@]}"; do
-            case "$path" in
-              README.md|AGENTS.md|CONTRIBUTING.md|docs/GOVERNANCE.md|docs/EXECUTION_HANDOFF.md|.github/CODEOWNERS|.github/pull_request_template.md|.github/workflows/governance.yml)
-                ;;
-              *)
-                echo "Path outside governance bootstrap allowlist: $path" >&2
-                unexpected=1
-                ;;
-            esac
+          stale_patterns=(
+            "GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW"
+            "This repository is in a governance-only bootstrap state"
+            "Enforce governance-only tracked-path allowlist"
+          )
+
+          for pattern in "${stale_patterns[@]}"; do
+            if grep -Fq -- "$pattern" "${control_files[@]}"; then
+              echo "Stale bootstrap-only control detected: $pattern" >&2
+              exit 1
+            fi
           done
 
-          if [[ "$unexpected" -ne 0 ]]; then
-            exit 1
-          fi
-
-          printf 'Verified %s governance-only tracked paths.\n' "${#tracked_paths[@]}"
+      - name: Governance integrity summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Durable RP01 governance markers are present."
+          echo "No repository-wide product-path allowlist is enforced by this workflow."

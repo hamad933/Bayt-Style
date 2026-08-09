@@ -1,81 +1,85 @@
 # Contributing to RP01
 
-This repository is in a governance-only bootstrap state. Contributions must preserve the explicit absence of product implementation unless a later, separately authorized workstream changes that boundary.
+All repository changes must be tied to an explicit authorized workstream and proposed through a reviewable branch and pull request.
 
-## 1. Exceptional owner-authorized initial commit
+## 1. Workstream and branch policy
 
-The only permitted direct-to-default-branch exception is the first commit of a repository that has no commits and no branch refs.
+Before writing:
 
-The procedure is:
+- identify the project and workstream;
+- verify the exact repository and base commit;
+- verify the authorized branch and its divergence from the base;
+- confirm in-scope paths, exclusions, required checks, evidence, and stop gate.
 
-1. Confirm the repository is genuinely empty and record the observation.
-2. Confirm the actor is the repository owner or has explicit owner authorization.
-3. Create one minimal root commit whose sole purpose is to establish the default branch and identify the project without claiming product state.
-4. Record the exact root commit SHA in the execution evidence.
-5. Introduce the complete governance proposal on a branch and submit it through a pull request.
-6. Do not use this exception again after the default branch exists.
+Use one narrowly scoped branch per authorized workstream unless the owner/Controller explicitly authorizes a combined scope. Do not push workstream changes directly to `main`.
 
-The root commit must not contain product code, dependencies, generated scaffolding, imported artifacts, gate decisions, merge authorization, or release authorization.
+Never force-push over reviewed evidence without explicit authorization and a recorded reason.
 
-## 2. Branch policy
+## 2. Pull-request policy
 
-- `main` is the review target and intended protected branch.
-- After the exceptional root commit, do not push workstream changes directly to `main`.
-- Use a narrowly named branch such as `rp01/<workstream-or-purpose>`.
-- Keep one authorized workstream per branch unless the owner explicitly approves a combined scope.
-- Rebase or update only when necessary to preserve a reviewable history; never force-push over reviewed evidence without disclosing it.
-- Delete or retain branches only after an authorized merge/closure decision. This bootstrap does not make that decision.
+Every pull request must identify:
 
-Recommended branch for this workstream: `rp01/repo-governance-bootstrap`.
+- project and workstream;
+- authorization reference;
+- exact base and head;
+- change classification;
+- scope and exclusions;
+- complete changed-path list;
+- tests/checks appropriate to the change;
+- observed results;
+- product-code introduction declaration;
+- dependency/configuration introduction declaration;
+- known limitations and non-claims;
+- evidence links or artifact references;
+- required stop gate;
+- reviewer entry point.
 
-## 3. Pull-request policy
+A green check, approval, resolved conversation, or “ready for review” state is evidence for review only. None of these independently authorizes merge, release, deployment, publication, or another workstream.
 
-Every pull request must:
+## 3. Product implementation contributions
 
-- identify the project, workstream, baseline, in-scope work, exclusions, and requested stop gate;
-- provide a complete changed-path list and exact base/head references;
-- explain verification performed and attach or link reproducible evidence;
-- state explicitly whether product code, dependencies, generated artifacts, or product configuration were introduced;
-- list known limitations, unresolved dependencies, and non-claims;
-- remain unmerged until the authorized reviewer gives an explicit merge decision.
+Product code, dependencies, lockfiles, runtime configuration, product tests, UI assets, backend/API code, or deployment definitions may be introduced only when the current owner/Controller-authorized workstream explicitly permits them.
 
-A green check, approval, resolved conversation, or “ready for review” state is evidence for review only. None of these independently authorizes merge, release, deployment, or progression to another stage.
+When product implementation is authorized:
+
+- keep the implementation inside the authorized scope;
+- use the accepted product and design authority named by the workstream;
+- add or update tests proportionate to the change;
+- report actual test results rather than planned checks;
+- do not invent product decisions or evidence;
+- do not mix unrelated governance or cleanup changes unless explicitly authorized.
+
+A governance-only workstream must remain governance-only.
 
 ## 4. Commit policy
 
-- Use concise, scoped commit messages that describe the repository change, not an unverified product outcome.
+- Use concise, scoped commit messages describing repository changes.
 - Keep commits reviewable and avoid unrelated formatting or generated churn.
-- Do not rewrite a published commit that is cited as evidence without recording the replacement SHA and reason.
-- Never include secrets, credentials, personal data, production data, or unverifiable third-party materials.
+- Do not rewrite a published commit cited as evidence without recording the replacement SHA and reason.
+- Never commit secrets, credentials, personal data, production data, or unverified private material.
+- Keep privacy-sensitive and proprietary evidence in its authoritative system unless repository storage is explicitly authorized.
 
-## 5. Evidence and Execution Handoff
+## 5. Verification expectations
 
-Before handoff, verify the proposed tree and provide:
+Verification must be appropriate to the change. At minimum:
 
-1. exact initial commit SHA;
-2. exact proposal head SHA;
-3. complete changed-path list;
-4. governance reading order;
-5. check results demonstrating that no product code was introduced;
-6. lightweight execution handoff with known limitations and non-claims;
-7. exact stop state.
+- confirm only authorized paths changed;
+- run syntax, lint, build, test, or policy checks that are relevant and available;
+- record the exact observed result of each check;
+- use `git diff --check` or an equivalent whitespace/error check;
+- inspect the final diff for unrelated content, secrets, and scope expansion;
+- confirm the stop gate and reviewer entry point.
 
-Use `docs/EXECUTION_HANDOFF.md` as the minimum structure. The pull-request description may supplement it with values that cannot be embedded in the commit that creates them, such as that commit’s own SHA or the pull-request number.
+Do not describe an unavailable or pending check as passed.
 
-## 6. Verification expectations
+## 6. Execution Handoff
 
-For the governance bootstrap, verification must at minimum confirm:
+Use `docs/EXECUTION_HANDOFF.md` as the minimum reusable handoff contract. The pull-request description may carry values that become known only after commit/PR creation, including the final head SHA, PR number, CI state, and review URL.
 
-- all required governance files exist and are non-empty;
-- tracked paths are limited to the documented governance allowlist;
-- `README.md` identifies `RP01` without asserting product implementation;
-- the stop state is exactly `GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW`;
-- no Stage E/F, UI, commerce, imported A–D artifact, `MAP-046`/`MAP-047` resolution, or `RP1-PX-G01` decision was introduced.
+## 7. Historical root-commit exception
 
-The bootstrap workflow under `.github/workflows/governance.yml` performs a proportionate subset of these checks. Human review remains required.
+The original empty-repository bootstrap used a one-time owner-authorized root commit to establish `main`. That exception is historical and non-controlling. It is not a standing permission for direct changes to `main`.
 
-## 7. Stop rule
+## 8. Merge, release, and deployment
 
-Stop at `GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW`.
-
-Do not merge, release, deploy, or begin product implementation under this workstream.
+Contributors and executors must not self-authorize merge, release, deployment, or publication. Those actions require the explicit authority applicable to the current workstream and lifecycle state.
