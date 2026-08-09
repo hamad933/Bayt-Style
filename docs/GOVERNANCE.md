@@ -2,96 +2,138 @@
 
 ## Scope
 
-This document defines the minimum repository-native governance baseline for:
+This document defines durable repository-native governance for:
 
 - Project: `RP01`
-- Workstream: `RP01-WS-REPO-GOV-BOOTSTRAP`
 - Repository: `hamad933/Bayt-Style`
-- Starting baseline: empty repository with no commits or branch refs
 
-It governs execution and review only. It does not define product requirements or establish product readiness.
+It governs how authorized work is executed, evidenced, reviewed, and stopped. It does not itself authorize a product feature, workstream, merge, release, deployment, or publication.
 
-## Governance reading order
+Governance marker: `DIRECT_SOURCE_AUTHORITY`
+Governance marker: `SEPARATE_RELEASE_AUTHORITY`
 
-1. `README.md`
-2. `AGENTS.md`
-3. `CONTRIBUTING.md`
-4. `docs/GOVERNANCE.md`
-5. `docs/EXECUTION_HANDOFF.md`
-6. `.github/pull_request_template.md`
+## 1. Repository-stable governance
 
-The earlier document controls when rules conflict, subject to an explicit, current owner instruction that stays within the authorized task.
+Repository-stable governance defines the controls that apply across workstreams:
 
-## Authorization model
+- direct authoritative source access;
+- explicit scope and exclusions;
+- exact baseline and branch verification;
+- branch-based execution and pull-request review;
+- reproducible evidence;
+- tests/checks appropriate to the change;
+- no invented facts, approvals, or product decisions;
+- no unrelated scope expansion;
+- stop-gate discipline;
+- no self-approval;
+- separate merge/release/deployment authority.
 
-- The repository owner authorizes workstreams and exceptional actions.
-- Executors may implement only the stated workstream scope and must stop at its named gate.
-- Reviewers evaluate evidence and may approve, request changes, or reject the proposal.
-- Merge, release, deployment, publication, and stage progression require separate explicit authorization.
-- Absence of a response, passing automation, or review readiness is not authorization.
+Governance changes are themselves governed changes and require an authorized workstream, branch, pull request, evidence, and review.
+
+## 2. Task and workstream authorization
+
+Repository governance does not create execution authority by itself.
+
+Before writing, an executor must have an explicit current owner/Controller-authorized workstream that states or resolves:
+
+- project and repository;
+- baseline;
+- branch;
+- in-scope work;
+- exclusions;
+- source authority;
+- required verification and evidence;
+- stop gate.
+
+If required authority is missing, contradictory, or stale, execution stops rather than expanding scope by inference.
+
+## 3. Product implementation
+
+Product implementation may occur only under a workstream that explicitly authorizes product code.
+
+That authorization may permit application source, dependencies, lockfiles, runtime configuration, product tests, UI/assets, backend/API code, or deployment configuration only to the extent stated by the workstream.
+
+The existence of durable governance does not mean product implementation already exists. Product scope and acceptance must come from current project authority, not from repository governance text.
+
+## 4. Accepted evidence
+
+Evidence must be factual, reproducible, and tied to authoritative repository or control objects.
+
+Minimum repository evidence includes:
+
+- exact base and head commits;
+- branch and pull request;
+- complete changed-path list;
+- tests/checks performed;
+- observed results;
+- CI state when available;
+- artifacts/evidence references;
+- limitations and non-claims;
+- exact stop state.
+
+Do not report planned, unavailable, or pending checks as passed.
+
+Accepted project evidence and owner decisions are governed in Google Drive. GitHub records technical implementation evidence such as commits, diffs, PRs, and CI.
+
+## 5. Release and deployment authority
+
+Merge, release, deployment, publication, rollout, and production-readiness decisions are separate from implementation and review readiness.
+
+A passing workflow or approved PR is not sufficient by itself. The applicable owner/Controller authority must explicitly permit the action.
+
+## Source authority
+
+### Google Drive
+
+Google Drive is authoritative for:
+
+- governed current state;
+- owner decisions;
+- workstream authorization;
+- lifecycle gates;
+- accepted evidence and continuity.
+
+### GitHub
+
+GitHub is authoritative for:
+
+- repository files and code;
+- branches and commits;
+- pull requests and diffs;
+- CI/check results;
+- technical implementation history and repository artifacts.
+
+Use direct source access when available. Do not substitute copied files or conversation memory for authoritative project state.
 
 ## Branch and pull-request control
 
-The first root commit of a truly empty repository may be made directly to `main` only under the exceptional procedure in `CONTRIBUTING.md`. Once `main` exists, changes must be proposed from a branch through a pull request.
+`main` is the review/merge target. Workstream changes are made on an authorized branch and proposed through a pull request.
 
-The intended protection model for `main` is:
+A reviewable PR must contain or link:
 
-- pull request required;
-- at least one authorized review required;
-- required governance check passing;
-- unresolved conversations blocking merge;
-- no force pushes or branch deletion;
-- owner review for governance-control changes.
+- authorization;
+- exact base/head;
+- scope and exclusions;
+- changed paths;
+- verification and observed results;
+- declarations about product code and dependencies/configuration;
+- limitations and non-claims;
+- stop gate and reviewer entry point.
 
-Repository settings are not modified by this workstream. Until branch protection is configured, these controls are policy-backed and partially enforced by `CODEOWNERS`, the pull-request template, and the governance workflow.
+Force-push, merge, release, deployment, and publication follow their own explicit authorization requirements.
 
-## Evidence standard
+## Review ownership and enforcement
 
-Evidence must be factual, reproducible, and tied to exact repository objects. The minimum evidence package is:
+`.github/CODEOWNERS` routes repository ownership for review. `.github/workflows/governance.yml` performs proportionate governance-integrity checks.
 
-- exact initial commit SHA;
-- exact proposal head SHA, recorded in the pull request or executor handoff;
-- complete changed-path list;
-- repository governance reading order;
-- verification results for required files and tracked-path allowlisting;
-- explicit no-product-code finding;
-- known limitations and unresolved dependencies;
-- exact stop state and permitted next action.
+Automation is a safeguard, not a substitute for human review or owner authority. Product-specific CI should be added by a later authorized product implementation workstream once a technology stack exists.
 
-Do not describe planned checks as completed checks. Do not claim a status that depends on an unobserved workflow result.
+## Historical bootstrap context
 
-## Execution Handoff rules
+The repository began with a governance-only bootstrap. That bootstrap completed and its evidence remains in Git history and PR #1. Its temporary implementation restrictions and bootstrap stop state are no longer controlling rules.
 
-A handoff must be short enough to review but complete enough to reproduce the executor’s state. It must separate:
+## Stop-gate discipline
 
-- **Observed facts** — repository state, commits, paths, checks, and results.
-- **Non-claims** — outcomes deliberately not asserted.
-- **Limitations** — controls not configured or evidence not available.
-- **Stop state** — the exact gate reached.
-- **Next authorized action** — review only, unless a later instruction says otherwise.
+Every workstream must name its own stop gate. Executors stop at that gate and return evidence for review.
 
-The committed handoff may refer to the pull-request description for self-referential values that cannot be embedded in their own commit, such as the proposal commit’s SHA.
-
-## Implementation prohibitions
-
-This bootstrap must not introduce or imply:
-
-- product implementation or generated application scaffolding;
-- Stage E/F work;
-- UI prototypes or commerce features;
-- unverified Stage A–D artifacts;
-- resolution of `MAP-046` or `MAP-047`;
-- a pass/fail declaration for `RP1-PX-G01`;
-- merge or release authorization.
-
-A future proposal that changes these prohibitions requires explicit owner authorization, its own scoped branch and pull request, and review against then-current governance.
-
-## Proportionate enforcement
-
-The bootstrap workflow validates required files, identity and stop-state markers, and a governance-only tracked-path allowlist. `CODEOWNERS` identifies the repository owner for review routing. These are safeguards, not substitutes for repository settings or human review.
-
-## Stop gate
-
-`GOVERNANCE_BOOTSTRAP_READY_FOR_PRIMARY_REVIEW`
-
-At this gate, the only authorized next action is primary review of the governance proposal. No merge or release decision is made here.
+Review readiness never authorizes a later workstream, merge, release, deployment, or publication by implication.
