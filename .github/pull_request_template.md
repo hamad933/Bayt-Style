@@ -1,63 +1,89 @@
-## Authorization and scope
+## Change classification
+
+Select exactly one:
+
+- [ ] `GOVERNANCE_CHANGE`
+- [ ] `PRODUCT_IMPLEMENTATION`
+
+## Authorization and identity
 
 - Project: `RP01`
 - Workstream:
-- Baseline ref/SHA:
-- Head ref/SHA:
-- In scope:
-- Explicitly out of scope:
+- Owner/Controller authorization reference:
+- Repository: `hamad933/Bayt-Style`
+- Base branch/ref:
+- Exact base SHA:
+- Head branch/ref:
+- Exact head SHA:
 - Required stop gate:
 
-## Summary
+## Scope
 
-Describe only the repository changes actually proposed. Do not claim product, gate, merge, or release outcomes that this pull request does not authorize.
+### In scope
+
+<!-- Describe only the authorized work proposed by this PR. -->
+
+### Explicit exclusions
+
+<!-- List adjacent work, later surfaces, release/deployment actions, or other items that are not authorized. -->
 
 ## Complete changed-path list
 
-- [ ] Every changed path is listed below.
+- [ ] Every changed repository path is listed below.
 
-<!-- List one repository path per line. -->
+<!-- One path per line. -->
 
-## Evidence and verification
+## Verification and observed results
 
-- [ ] Exact initial commit SHA recorded when applicable.
-- [ ] Exact proposal head SHA recorded.
-- [ ] Governance reading order confirmed.
-- [ ] Required files verified as present and non-empty.
-- [ ] Tracked paths checked against the authorized scope.
-- [ ] Product-code introduction explicitly assessed.
-- [ ] Workflow/check results recorded without inferring pending results.
+- [ ] Tests/checks are appropriate to this change.
+- [ ] Observed results are recorded without converting pending/unavailable checks into passes.
+- [ ] Final diff was inspected for unrelated changes and secrets.
+- [ ] `git diff --check` or equivalent whitespace validation was performed.
 
-### Checks performed and observed results
+### Checks performed
 
-<!-- Include reproducible commands/checks and actual results. -->
+<!-- Include commands/checks and actual observed results. -->
 
-## Product implementation declaration
+### CI status
 
-- [ ] No product code, generated application scaffolding, dependencies, lockfiles, runtime configuration, product tests, UI assets, commerce implementation, or deployment definitions were introduced.
-- [ ] No unverified Stage A–D artifacts were imported.
-- [ ] No Stage E/F work was performed.
+<!-- Record actual state only: pending / passing / failing / not run / unavailable. -->
 
-Explain any exception; an exception requires explicit owner authorization and may be outside this workstream.
+## Implementation declarations
 
-## Gate and authorization non-claims
+### Product code
 
-- [ ] `MAP-046` was not resolved.
-- [ ] `MAP-047` was not resolved.
-- [ ] `RP1-PX-G01` was not declared passed or failed.
-- [ ] This pull request does not authorize merge, release, deployment, publication, or progression to another stage.
+Product code introduced: `YES` / `NO`
 
-## Known limitations and unresolved dependencies
+If `YES`, identify the explicit workstream authorization and product paths introduced.
 
-<!-- State repository-setting gaps, pending checks, unavailable evidence, or other constraints. -->
+### Dependencies and configuration
 
-## Execution Handoff
+Dependencies or lockfiles introduced: `YES` / `NO`
+Runtime/application configuration introduced: `YES` / `NO`
+Deployment configuration introduced: `YES` / `NO`
 
-- Observed facts:
-- Non-claims:
-- Limitations:
-- Stop state:
-- Next authorized action:
+If any answer is `YES`, list the files and authorizing scope.
+
+## Evidence
+
+- Base/head commit references:
+- Execution Handoff:
+- Test/build evidence:
+- Other authoritative evidence:
+
+## Known limitations
+
+<!-- State real limitations, environment gaps, pending checks, repository-setting gaps, or unresolved dependencies. -->
+
+## Non-claims
+
+<!-- State outcomes this PR does not claim, including product acceptance, merge, release, deployment, or publication when outside scope. -->
+
+## Stop gate
+
+- Exact stop state:
+- Actions deliberately not performed:
+- Reviewer entry point:
 
 ## Reviewer decision
 
@@ -65,4 +91,4 @@ Explain any exception; an exception requires explicit owner authorization and ma
 - [ ] Changes requested.
 - [ ] Rejected or superseded.
 
-A reviewer decision here does not itself authorize merge or release unless the owner states that authorization explicitly and separately.
+Reviewer approval does not itself authorize merge, release, deployment, publication, or a later workstream unless the applicable owner/Controller authority explicitly grants that action.
