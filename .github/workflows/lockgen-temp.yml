@@ -1,0 +1,54 @@
+name: Temporary Lock Generation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  generate-lockfiles:
+    name: Generate standard lockfiles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate composer.lock from approved manifest
+        run: composer update --no-install --no-scripts --no-interaction --prefer-dist --no-progress
+
+      - name: Generate package-lock.json from approved manifest
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Verify manifests were not changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f composer.lock
+          test -f package-lock.json
+          git diff --exit-code -- composer.json package.json
+
+      - name: Upload generated lockfiles
+        uses: actions/upload-artifact@v4
+        with:
+          name: rp01-standard-lockfiles
+          path: |
+            composer.lock
+            package-lock.json
+          if-no-files-found: error
+          retention-days: 1
