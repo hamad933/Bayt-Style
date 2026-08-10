@@ -80,6 +80,9 @@ jobs:
       - name: Run Laravel tests
         run: composer test
 
+      - name: Reset demo data for browser verification
+        run: php artisan migrate:fresh --seed --force
+
       - name: Install Chromium for the single browser verification layer
         run: npx playwright install --with-deps chromium
 
