@@ -1,0 +1,10 @@
+/.env
+/vendor
+/node_modules
+/public/build
+/public/hot
+/storage/*.key
+/storage/test-artifacts
+.phpunit.result.cache
+npm-debug.log*
+.DS_Store

@@ -1,0 +1,113 @@
+name: Product CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  product-verification:
+    name: Laravel product verification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      APP_ENV: testing
+      APP_URL: http://127.0.0.1:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: bayt_style_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SESSION_DRIVER: file
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+
+    steps:
+      - name: Check out proposal
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_pgsql
+          coverage: none
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install PostgreSQL 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-17
+          sudo systemctl stop postgresql || true
+          sudo pg_dropcluster --stop 17 main || true
+          sudo pg_createcluster 17 main --port=5432 --start
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo -u postgres createdb bayt_style_test
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate:fresh --seed --force
+
+      - name: Run Laravel tests
+        run: composer test
+
+      - name: Install Chromium for the single browser verification layer
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Laravel server
+        shell: bash
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/e2e-server.log 2>&1 &
+          echo $! > storage/framework/testing/e2e-server.pid
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/up >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat storage/logs/e2e-server.log
+          exit 1
+
+      - name: Run browser critical flow and responsive verification
+        run: npm run test:e2e
+
+      - name: Upload visual and browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rp01-s01-s03-browser-evidence
+          path: |
+            storage/test-artifacts/
+            playwright-report/
+            storage/logs/e2e-server.log
+          if-no-files-found: warn
+          retention-days: 14
