@@ -17,7 +17,7 @@ test('home → catalog → Arabic search/filter → product → wishlist → qua
     await expect(page.getByText('كرسي استرخاء مخملي', { exact: true })).toBeVisible();
 
     await page.locator('#desktop-category').selectOption('seating');
-    await page.getByTestId('apply-filters').click();
+    await page.locator('.desktop-filters').getByTestId('apply-filters').click();
     await expect(page).toHaveURL(/category=seating/);
 
     await page.getByText('كرسي استرخاء مخملي', { exact: true }).first().click();
