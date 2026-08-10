@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
                 'description' => 'مصباح طاولة متزن يضيف إضاءة دافئة من دون حضور بصري صاخب.',
                 'details' => 'قطعة إضاءة تجريبية ضمن بيانات التطوير فقط.',
                 'material' => 'سيراميك', 'room' => 'غرفة النوم', 'featured' => true, 'sku' => 'BAS-LAMP-CER-01', 'variant' => 'سيراميك زيتوني', 'price' => 420,
-                'media' => [['images/products/product-lamp.jpg', 'مصباح طاولة سيراميك', 0]],
+                'media' => [['images/editorial/lighting.jpg', 'مصباح طاولة سيراميك ضمن مشهد إضاءة', 0]],
             ],
             [
                 'category' => 'tables', 'name_ar' => 'طاولة قهوة خشب طبيعي', 'slug' => 'natural-wood-coffee-table',
@@ -51,7 +51,7 @@ class DatabaseSeeder extends Seeder
                 'description' => 'طاولة قهوة عملية ذات حضور بسيط وخامة خشبية دافئة.',
                 'details' => 'بيانات عرض وتطوير وليست كتالوجًا إنتاجيًا.',
                 'material' => 'خشب', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-TABLE-WOOD-01', 'variant' => 'خشب داكن', 'price' => 1290,
-                'media' => [['images/products/product-table.jpg', 'طاولة قهوة خشب طبيعي', 0]],
+                'media' => [['images/editorial/dining.jpg', 'طاولة قهوة خشب طبيعي ضمن مشهد طاولة', 0]],
             ],
             [
                 'category' => 'textiles', 'name_ar' => 'وسادة نسيج محبوك', 'slug' => 'knitted-textile-cushion',
@@ -59,7 +59,7 @@ class DatabaseSeeder extends Seeder
                 'description' => 'وسادة نسيج محبوك بلون رملي هادئ.',
                 'details' => 'بيانات تجريبية للتطوير.',
                 'material' => 'نسيج', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-CUSHION-KNIT-01', 'variant' => 'نسيج رملي', 'price' => 195,
-                'media' => [['images/products/product-pillow.jpg', 'وسادة نسيج محبوك', 0]],
+                'media' => [['images/editorial/living.jpg', 'وسادة نسيج محبوك ضمن مشهد معيشة', 0]],
             ],
             [
                 'category' => 'seating', 'name_ar' => 'كرسي طعام خشبي', 'slug' => 'wood-dining-chair',
