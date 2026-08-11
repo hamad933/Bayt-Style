@@ -62,11 +62,15 @@ jobs:
           sudo -u postgres createdb bayt_style_test
           pg_isready -h 127.0.0.1 -p 5432 -U postgres
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install PHP dependencies from composer.lock
+        run: |
+          test -f composer.lock
+          composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Install frontend dependencies
-        run: npm install --no-audit --no-fund
+      - name: Install frontend dependencies from package-lock.json
+        run: |
+          test -f package-lock.json
+          npm ci --no-audit --no-fund
 
       - name: Build assets
         run: npm run build
