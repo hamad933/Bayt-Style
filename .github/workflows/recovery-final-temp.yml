@@ -1,0 +1,102 @@
+name: RP01 Final Temporary Recovery
+
+on:
+  push:
+    branches:
+      - rp01/real-implementation-s01-s03
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact pushed head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Restore exact approved lockfiles and media
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/9050543831/zip" > /tmp/rp01-locks.zip
+          echo 'bd7d22a31dc692d11a356ee84b096f9c9521837bf757d02acd7a36caf4f8d623  /tmp/rp01-locks.zip' | sha256sum -c -
+          rm -rf /tmp/rp01-locks
+          mkdir -p /tmp/rp01-locks
+          unzip -q /tmp/rp01-locks.zip -d /tmp/rp01-locks
+          test -f /tmp/rp01-locks/composer.lock
+          test -f /tmp/rp01-locks/package-lock.json
+          cp /tmp/rp01-locks/composer.lock composer.lock
+          cp /tmp/rp01-locks/package-lock.json package-lock.json
+          git diff --exit-code -- composer.json package.json
+
+          fetch_blob() {
+            gh api "repos/${GITHUB_REPOSITORY}/git/blobs/$1" --jq '.content' | tr -d '\n' | base64 --decode > "$2"
+          }
+          fetch_blob 09a0ee1cbe7cb87f78a7983f97c663c22e77fbb0 public/images/products/chair-main.jpg
+          fetch_blob 1573771895456151073025d008bfb0ad923839e0 public/images/products/chair-detail-side.jpg
+          fetch_blob 87cfd4f2bb77cf99eb7bbe1b893a7896fbccae83 public/images/products/chair-detail-seat.jpg
+          fetch_blob fc0aebac4aa2da3be0e78ba6e4dfe8263b8ee95f public/images/products/chair-detail-back.jpg
+
+          echo '9b4d59d3b9f9244e1a7f14cad9f7bc58d54dd43b34d980513199d222f0004901  public/images/products/chair-main.jpg' | sha256sum -c -
+          echo '139a13fc55e65f7b339e3ca970c6af0931f8e608414818d8887475e68dae506a  public/images/products/chair-detail-side.jpg' | sha256sum -c -
+          echo 'ac1923edbd7f1299ed2648136dc7f568338fa985197731e4ddd620dd6c9bcccd  public/images/products/chair-detail-seat.jpg' | sha256sum -c -
+          echo 'f32dabf7c717c2921a35519fbbc2e5927365c5cb686ef5cf5b484cffe733e768  public/images/products/chair-detail-back.jpg' | sha256sum -c -
+          test "$(git hash-object public/images/products/chair-main.jpg public/images/products/chair-detail-side.jpg public/images/products/chair-detail-seat.jpg public/images/products/chair-detail-back.jpg | sort -u | wc -l)" -eq 4
+
+      - name: Commit exact bounded recovery and remove all temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/workflows/lockgen-temp.yml \
+            .github/workflows/recovery-temp.yml \
+            .github/workflows/recovery-pr-temp.yml \
+            .github/workflows/recovery-final-temp.yml
+
+          test -f composer.lock
+          test -f package-lock.json
+          grep -Fq 'test -f composer.lock' .github/workflows/product-ci.yml
+          grep -Fq 'composer install --no-interaction --prefer-dist --no-progress' .github/workflows/product-ci.yml
+          grep -Fq 'test -f package-lock.json' .github/workflows/product-ci.yml
+          grep -Fq 'npm ci --no-audit --no-fund' .github/workflows/product-ci.yml
+          ! grep -Fq 'npm install --no-audit --no-fund' .github/workflows/product-ci.yml
+          grep -Fq 'const galleryPanels' tests/e2e/customer-flow.spec.js
+          grep -Fq "name: 'عرض الصورة 2'" tests/e2e/customer-flow.spec.js
+          grep -Fq "name: 'عرض الصورة 4'" tests/e2e/customer-flow.spec.js
+
+          git add -A
+          python3 - <<'PY'
+          import subprocess
+          allowed = {
+              '.github/workflows/lockgen-temp.yml',
+              '.github/workflows/recovery-temp.yml',
+              '.github/workflows/recovery-pr-temp.yml',
+              '.github/workflows/recovery-final-temp.yml',
+              'composer.lock', 'package-lock.json',
+              'public/images/products/chair-main.jpg',
+              'public/images/products/chair-detail-side.jpg',
+              'public/images/products/chair-detail-seat.jpg',
+              'public/images/products/chair-detail-back.jpg',
+          }
+          actual = set(subprocess.check_output(['git','diff','--cached','--name-only'], text=True).splitlines())
+          extra = actual - allowed
+          if extra:
+              raise SystemExit(f'out-of-scope staged paths: {sorted(extra)}')
+          required = allowed
+          missing = required - actual
+          if missing:
+              raise SystemExit(f'required paths not staged: {sorted(missing)}')
+          PY
+
+          git config user.name 'RP01 bounded executor'
+          git config user.email 'actions@users.noreply.github.com'
+          git commit -m 'fix(review): restore exact locks and S03 media'
+          git push origin HEAD:rp01/real-implementation-s01-s03
