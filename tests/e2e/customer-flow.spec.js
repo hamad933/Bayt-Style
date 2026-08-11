@@ -23,6 +23,25 @@ test('home → catalog → Arabic search/filter → product → wishlist → qua
     await page.getByText('كرسي استرخاء مخملي', { exact: true }).first().click();
     await expect(page).toHaveURL(/\/products\/olive-velvet-lounge-chair/);
 
+    const galleryPanels = page.locator('.gallery-main img[role="tabpanel"]');
+    await expect(galleryPanels).toHaveCount(4);
+    const gallerySources = await galleryPanels.evaluateAll((images) => images.map((image) => new URL(image.src).pathname));
+    expect(new Set(gallerySources).size).toBe(4);
+    await expect(galleryPanels.nth(0)).toHaveAttribute('src', /chair-main\.jpg$/);
+    await expect(galleryPanels.nth(0)).toBeVisible();
+
+    const secondGalleryTab = page.getByRole('tab', { name: 'عرض الصورة 2' });
+    await secondGalleryTab.click();
+    await expect(secondGalleryTab).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#product-media-1')).toBeVisible();
+    await expect(page.locator('#product-media-0')).toBeHidden();
+
+    const fourthGalleryTab = page.getByRole('tab', { name: 'عرض الصورة 4' });
+    await fourthGalleryTab.click();
+    await expect(fourthGalleryTab).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#product-media-3')).toBeVisible();
+    await expect(page.locator('#product-media-1')).toBeHidden();
+
     const wishlist = page.getByTestId('detail-wishlist');
     await wishlist.click();
     await expect(wishlist).toHaveAttribute('aria-pressed', 'true');
