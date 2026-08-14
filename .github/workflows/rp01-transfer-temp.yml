@@ -1,0 +1,59 @@
+name: RP01 Temporary Byte Transfer
+
+on:
+  push:
+    branches:
+      - tmp-test-ignore
+    paths:
+      - .rp01-transfer/READY
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact transfer head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Reconstruct and verify exact payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .rp01-transfer/chunk-* > /tmp/rp01-transfer.b64
+          base64 --decode /tmp/rp01-transfer.b64 > /tmp/rp01-transfer.tar.xz
+          echo '81f9c0685b618430634d12afdc9dfc6253cf73e28d24a9002309a516952d44b7  /tmp/rp01-transfer.tar.xz' | sha256sum -c -
+          rm -rf /tmp/rp01-payload
+          mkdir -p /tmp/rp01-payload
+          tar -xJf /tmp/rp01-transfer.tar.xz -C /tmp/rp01-payload
+          test "$(git hash-object /tmp/rp01-payload/composer.lock)" = '66df49f1c323b25cccd38552b40882e83edb4270'
+          test "$(git hash-object /tmp/rp01-payload/package-lock.json)" = 'a2c6034d8bf184de8cc28508ccb94b124f78a582'
+          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-main.jpg)" = '5a3b627a9f01129672d1038ac53dee1d113fcee4'
+          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-detail-side.jpg)" = '3f12b612ef4bbd75dfa988df68164ceaf01b1243'
+          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-detail-seat.jpg)" = '62caaafb36015f2c84c1e9d1539c2556e645aabc'
+          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-detail-back.jpg)" = 'fe8faf6d724c3964a53c3893c20fbac8ac951d15'
+          cp /tmp/rp01-payload/composer.lock composer.lock
+          cp /tmp/rp01-payload/package-lock.json package-lock.json
+          cp /tmp/rp01-payload/public/images/products/chair-main.jpg public/images/products/chair-main.jpg
+          cp /tmp/rp01-payload/public/images/products/chair-detail-side.jpg public/images/products/chair-detail-side.jpg
+          cp /tmp/rp01-payload/public/images/products/chair-detail-seat.jpg public/images/products/chair-detail-seat.jpg
+          cp /tmp/rp01-payload/public/images/products/chair-detail-back.jpg public/images/products/chair-detail-back.jpg
+
+      - name: Persist exact blobs on transfer branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add composer.lock package-lock.json \
+            public/images/products/chair-main.jpg \
+            public/images/products/chair-detail-side.jpg \
+            public/images/products/chair-detail-seat.jpg \
+            public/images/products/chair-detail-back.jpg
+          git config user.name 'RP01 bounded executor'
+          git config user.email 'actions@users.noreply.github.com'
+          git commit -m 'chore(transfer): materialize exact RP01 correction blobs'
+          git push origin HEAD:tmp-test-ignore
