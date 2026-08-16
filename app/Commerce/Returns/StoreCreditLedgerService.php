@@ -162,6 +162,7 @@ class StoreCreditLedgerService
                 $this->moneyMinor((string) $entry->amount),
                 (string) $entry->currency,
                 $entry->occurred_at,
+                (int) $entry->id,
             );
 
             $reversedTargets[$targetId] = true;
@@ -174,6 +175,7 @@ class StoreCreditLedgerService
         int $reversalAmountMinor,
         string $currency,
         CarbonInterface $occurredAt,
+        ?int $reversalEntryId = null,
     ): void {
         if (! in_array($target->entry_type, self::DIRECT_ENTRY_TYPES, true)) {
             throw new DomainException('A reversal can target only an original credit or debit entry.');
@@ -191,7 +193,18 @@ class StoreCreditLedgerService
             throw new DomainException('The reversal amount must exactly match its target.');
         }
 
-        if (! $target->occurred_at->lt($occurredAt)) {
+        $targetMoment = (int) $target->occurred_at->format('Uu');
+        $reversalMoment = (int) $occurredAt->format('Uu');
+
+        if ($targetMoment > $reversalMoment) {
+            throw new DomainException('The reversal target must be causally prior to the reversal.');
+        }
+
+        if (
+            $targetMoment === $reversalMoment
+            && $reversalEntryId !== null
+            && (int) $target->id >= $reversalEntryId
+        ) {
             throw new DomainException('The reversal target must be causally prior to the reversal.');
         }
     }
