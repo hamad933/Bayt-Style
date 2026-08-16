@@ -69,10 +69,26 @@ class DatabaseSeeder extends Seeder
                 'details' => 'بيانات تطوير متعمدة لتجربة S04: اللون وتشطيب القاعدة يحددان Variant حقيقيًا، ولا تمثل هذه البيانات كتالوجًا إنتاجيًا.',
                 'material' => 'مخمل', 'room' => 'المعيشة', 'featured' => true,
                 'variants' => [
-                    ['sku' => 'BAS-CHAIR-OLV-01', 'name' => 'مخمل زيتوني · جوزي داكن', 'price' => 1950, 'inventory' => 25, 'default' => true, 'active' => true, 'attribute_values' => ['color' => 'زيتوني', 'finish' => 'جوزي داكن']],
-                    ['sku' => 'BAS-CHAIR-SAND-01', 'name' => 'مخمل رملي · جوزي داكن', 'price' => 2050, 'inventory' => 18, 'default' => false, 'active' => true, 'attribute_values' => ['color' => 'رملي', 'finish' => 'جوزي داكن']],
-                    ['sku' => 'BAS-CHAIR-OLV-OAK-01', 'name' => 'مخمل زيتوني · بلوط طبيعي', 'price' => 1980, 'inventory' => 12, 'default' => false, 'active' => true, 'attribute_values' => ['color' => 'زيتوني', 'finish' => 'بلوط طبيعي']],
-                    ['sku' => 'BAS-CHAIR-SAND-OAK-01', 'name' => 'مخمل رملي · بلوط طبيعي', 'price' => 2080, 'inventory' => 0, 'default' => false, 'active' => false, 'attribute_values' => ['color' => 'رملي', 'finish' => 'بلوط طبيعي']],
+                    [
+                        'sku' => 'BAS-CHAIR-OLV-01', 'name' => 'مخمل زيتوني · جوزي داكن', 'price' => 1950,
+                        'inventory' => 25, 'default' => true, 'active' => true,
+                        'attribute_values' => ['color' => 'زيتوني', 'finish' => 'جوزي داكن'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-SAND-01', 'name' => 'مخمل رملي · جوزي داكن', 'price' => 2050,
+                        'inventory' => 18, 'default' => false, 'active' => true,
+                        'attribute_values' => ['color' => 'رملي', 'finish' => 'جوزي داكن'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-OLV-OAK-01', 'name' => 'مخمل زيتوني · بلوط طبيعي', 'price' => 1980,
+                        'inventory' => 12, 'default' => false, 'active' => true,
+                        'attribute_values' => ['color' => 'زيتوني', 'finish' => 'بلوط طبيعي'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-SAND-OAK-01', 'name' => 'مخمل رملي · بلوط طبيعي', 'price' => 2080,
+                        'inventory' => 0, 'default' => false, 'active' => false,
+                        'attribute_values' => ['color' => 'رملي', 'finish' => 'بلوط طبيعي'],
+                    ],
                 ],
                 'media' => [
                     ['images/products/chair-main.jpg', 'كرسي استرخاء مخملي بلون زيتوني', 0],
@@ -81,15 +97,72 @@ class DatabaseSeeder extends Seeder
                     ['images/products/chair-detail-back.jpg', 'تفصيل ظهر كرسي الاسترخاء', 3],
                 ],
             ],
-            ['category' => 'lighting', 'name_ar' => 'مصباح طاولة سيراميك', 'slug' => 'ceramic-table-lamp', 'short' => 'إضاءة هادئة بقاعدة سيراميك مطفية وتكوين بسيط.', 'description' => 'مصباح طاولة متزن يضيف إضاءة دافئة من دون حضور بصري صاخب.', 'details' => 'قطعة إضاءة تجريبية ضمن بيانات التطوير فقط.', 'material' => 'سيراميك', 'room' => 'غرفة النوم', 'featured' => true, 'sku' => 'BAS-LAMP-CER-01', 'variant' => 'سيراميك زيتوني', 'price' => 420, 'media' => [['images/editorial/lighting.jpg', 'مصباح طاولة سيراميك ضمن مشهد إضاءة', 0]]],
-            ['category' => 'tables', 'name_ar' => 'طاولة قهوة خشب طبيعي', 'slug' => 'natural-wood-coffee-table', 'short' => 'طاولة منخفضة بخط دائري وخشب داكن لمساحات الجلوس.', 'description' => 'طاولة قهوة عملية ذات حضور بسيط وخامة خشبية دافئة.', 'details' => 'بيانات عرض وتطوير وليست كتالوجًا إنتاجيًا.', 'material' => 'خشب', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-TABLE-WOOD-01', 'variant' => 'خشب داكن', 'price' => 1290, 'media' => [['images/editorial/dining.jpg', 'طاولة قهوة خشب طبيعي ضمن مشهد طاولة', 0]]],
-            ['category' => 'textiles', 'name_ar' => 'وسادة نسيج محبوك', 'slug' => 'knitted-textile-cushion', 'short' => 'وسادة محايدة بنسيج واضح تضيف طبقة مريحة للمساحة.', 'description' => 'وسادة نسيج محبوك بلون رملي هادئ.', 'details' => 'بيانات تجريبية للتطوير.', 'material' => 'نسيج', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-CUSHION-KNIT-01', 'variant' => 'نسيج رملي', 'price' => 195, 'media' => [['images/editorial/living.jpg', 'وسادة نسيج محبوك ضمن مشهد معيشة', 0]]],
-            ['category' => 'seating', 'name_ar' => 'كرسي طعام خشبي', 'slug' => 'wood-dining-chair', 'short' => 'كرسي طعام بخطوط واضحة وخامة طبيعية.', 'description' => 'كرسي بسيط لمائدة يومية هادئة.', 'details' => 'بيانات تجريبية للتطوير.', 'material' => 'خشب', 'room' => 'الطعام والضيافة', 'featured' => false, 'sku' => 'BAS-DINING-CHAIR-01', 'variant' => 'خشب طبيعي', 'price' => 680, 'media' => [['images/editorial/dining.jpg', 'كرسي طعام خشبي ضمن مشهد مائدة', 0]]],
-            ['category' => 'lighting', 'name_ar' => 'وحدة إضاءة معلقة', 'slug' => 'black-pendant-light', 'short' => 'إضاءة معلقة سوداء بهيئة دقيقة للمائدة.', 'description' => 'وحدة إضاءة معلقة ذات حضور رسومي هادئ.', 'details' => 'بيانات تجريبية للتطوير.', 'material' => 'معدن', 'room' => 'الطعام والضيافة', 'featured' => false, 'sku' => 'BAS-PENDANT-BLK-01', 'variant' => 'معدن أسود', 'price' => 540, 'media' => [['images/editorial/lighting.jpg', 'وحدة إضاءة معلقة سوداء', 0]]],
-            ['category' => 'decor', 'name_ar' => 'مزهرية حجرية هادئة', 'slug' => 'stone-vase', 'short' => 'مزهرية بسطح مطفي لتنسيقات بسيطة.', 'description' => 'قطعة ديكور ذات كتلة هادئة ولون محايد.', 'details' => 'بيانات تجريبية للتطوير.', 'material' => 'حجر', 'room' => 'المعيشة', 'featured' => false, 'sku' => 'BAS-VASE-STONE-01', 'variant' => 'حجر فاتح', 'price' => 360, 'media' => [['images/editorial/seasonal.jpg', 'مزهرية حجرية ضمن تنسيق موسمي', 0]]],
-            ['category' => 'tables', 'name_ar' => 'طاولة جانبية مستديرة', 'slug' => 'round-side-table', 'short' => 'طاولة جانبية صغيرة للمساحات الهادئة.', 'description' => 'طاولة جانبية ذات قاعدة بسيطة وسطح دائري.', 'details' => 'بيانات تجريبية للتطوير.', 'material' => 'خشب', 'room' => 'غرفة النوم', 'featured' => false, 'sku' => 'BAS-SIDE-TABLE-01', 'variant' => 'خشب جوزي', 'price' => 890, 'media' => [['images/editorial/bedroom.jpg', 'طاولة جانبية ضمن غرفة نوم هادئة', 0]]],
-            ['category' => 'textiles', 'name_ar' => 'غطاء خفيف للكنبة', 'slug' => 'soft-sofa-throw', 'short' => 'نسيج خفيف بطابع طبيعي وملمس ناعم.', 'description' => 'غطاء بسيط يضيف طبقة ملمسية إلى جلسة المعيشة.', 'details' => 'بيانات تجريبية للتطوير.', 'material' => 'نسيج', 'room' => 'المعيشة', 'featured' => false, 'sku' => 'BAS-THROW-SAND-01', 'variant' => 'نسيج رملي', 'price' => 250, 'media' => [['images/editorial/living.jpg', 'غطاء نسيجي ضمن غرفة معيشة', 0]]],
-            ['category' => 'decor', 'name_ar' => 'كونسول حجري', 'slug' => 'stone-console', 'short' => 'قطعة كبيرة بخط هادئ لمداخل المنزل.', 'description' => 'كونسول بسيط يوازن بين الكتلة والفراغ.', 'details' => 'بيانات تجريبية للتطوير.', 'material' => 'حجر', 'room' => 'المدخل', 'featured' => false, 'sku' => 'BAS-CONSOLE-STONE-01', 'variant' => 'حجر رملي', 'price' => 1650, 'media' => [['images/editorial/hero.jpg', 'كونسول حجري ضمن مساحة منزلية دافئة', 0]]],
+            [
+                'category' => 'lighting', 'name_ar' => 'مصباح طاولة سيراميك', 'slug' => 'ceramic-table-lamp',
+                'short' => 'إضاءة هادئة بقاعدة سيراميك مطفية وتكوين بسيط.',
+                'description' => 'مصباح طاولة متزن يضيف إضاءة دافئة من دون حضور بصري صاخب.',
+                'details' => 'قطعة إضاءة تجريبية ضمن بيانات التطوير فقط.',
+                'material' => 'سيراميك', 'room' => 'غرفة النوم', 'featured' => true, 'sku' => 'BAS-LAMP-CER-01', 'variant' => 'سيراميك زيتوني', 'price' => 420,
+                'media' => [['images/editorial/lighting.jpg', 'مصباح طاولة سيراميك ضمن مشهد إضاءة', 0]],
+            ],
+            [
+                'category' => 'tables', 'name_ar' => 'طاولة قهوة خشب طبيعي', 'slug' => 'natural-wood-coffee-table',
+                'short' => 'طاولة منخفضة بخط دائري وخشب داكن لمساحات الجلوس.',
+                'description' => 'طاولة قهوة عملية ذات حضور بسيط وخامة خشبية دافئة.',
+                'details' => 'بيانات عرض وتطوير وليست كتالوجًا إنتاجيًا.',
+                'material' => 'خشب', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-TABLE-WOOD-01', 'variant' => 'خشب داكن', 'price' => 1290,
+                'media' => [['images/editorial/dining.jpg', 'طاولة قهوة خشب طبيعي ضمن مشهد طاولة', 0]],
+            ],
+            [
+                'category' => 'textiles', 'name_ar' => 'وسادة نسيج محبوك', 'slug' => 'knitted-textile-cushion',
+                'short' => 'وسادة محايدة بنسيج واضح تضيف طبقة مريحة للمساحة.',
+                'description' => 'وسادة نسيج محبوك بلون رملي هادئ.',
+                'details' => 'بيانات تجريبية للتطوير.',
+                'material' => 'نسيج', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-CUSHION-KNIT-01', 'variant' => 'نسيج رملي', 'price' => 195,
+                'media' => [['images/editorial/living.jpg', 'وسادة نسيج محبوك ضمن مشهد معيشة', 0]],
+            ],
+            [
+                'category' => 'seating', 'name_ar' => 'كرسي طعام خشبي', 'slug' => 'wood-dining-chair',
+                'short' => 'كرسي طعام بخطوط واضحة وخامة طبيعية.', 'description' => 'كرسي بسيط لمائدة يومية هادئة.',
+                'details' => 'بيانات تجريبية للتطوير.', 'material' => 'خشب', 'room' => 'الطعام والضيافة', 'featured' => false,
+                'sku' => 'BAS-DINING-CHAIR-01', 'variant' => 'خشب طبيعي', 'price' => 680,
+                'media' => [['images/editorial/dining.jpg', 'كرسي طعام خشبي ضمن مشهد مائدة', 0]],
+            ],
+            [
+                'category' => 'lighting', 'name_ar' => 'وحدة إضاءة معلقة', 'slug' => 'black-pendant-light',
+                'short' => 'إضاءة معلقة سوداء بهيئة دقيقة للمائدة.', 'description' => 'وحدة إضاءة معلقة ذات حضور رسومي هادئ.',
+                'details' => 'بيانات تجريبية للتطوير.', 'material' => 'معدن', 'room' => 'الطعام والضيافة', 'featured' => false,
+                'sku' => 'BAS-PENDANT-BLK-01', 'variant' => 'معدن أسود', 'price' => 540,
+                'media' => [['images/editorial/lighting.jpg', 'وحدة إضاءة معلقة سوداء', 0]],
+            ],
+            [
+                'category' => 'decor', 'name_ar' => 'مزهرية حجرية هادئة', 'slug' => 'stone-vase',
+                'short' => 'مزهرية بسطح مطفي لتنسيقات بسيطة.', 'description' => 'قطعة ديكور ذات كتلة هادئة ولون محايد.',
+                'details' => 'بيانات تجريبية للتطوير.', 'material' => 'حجر', 'room' => 'المعيشة', 'featured' => false,
+                'sku' => 'BAS-VASE-STONE-01', 'variant' => 'حجر فاتح', 'price' => 360,
+                'media' => [['images/editorial/seasonal.jpg', 'مزهرية حجرية ضمن تنسيق موسمي', 0]],
+            ],
+            [
+                'category' => 'tables', 'name_ar' => 'طاولة جانبية مستديرة', 'slug' => 'round-side-table',
+                'short' => 'طاولة جانبية صغيرة للمساحات الهادئة.', 'description' => 'طاولة جانبية ذات قاعدة بسيطة وسطح دائري.',
+                'details' => 'بيانات تجريبية للتطوير.', 'material' => 'خشب', 'room' => 'غرفة النوم', 'featured' => false,
+                'sku' => 'BAS-SIDE-TABLE-01', 'variant' => 'خشب جوزي', 'price' => 890,
+                'media' => [['images/editorial/bedroom.jpg', 'طاولة جانبية ضمن غرفة نوم هادئة', 0]],
+            ],
+            [
+                'category' => 'textiles', 'name_ar' => 'غطاء خفيف للكنبة', 'slug' => 'soft-sofa-throw',
+                'short' => 'نسيج خفيف بطابع طبيعي وملمس ناعم.', 'description' => 'غطاء بسيط يضيف طبقة ملمسية إلى جلسة المعيشة.',
+                'details' => 'بيانات تجريبية للتطوير.', 'material' => 'نسيج', 'room' => 'المعيشة', 'featured' => false,
+                'sku' => 'BAS-THROW-SAND-01', 'variant' => 'نسيج رملي', 'price' => 250,
+                'media' => [['images/editorial/living.jpg', 'غطاء نسيجي ضمن غرفة معيشة', 0]],
+            ],
+            [
+                'category' => 'decor', 'name_ar' => 'كونسول حجري', 'slug' => 'stone-console',
+                'short' => 'قطعة كبيرة بخط هادئ لمداخل المنزل.', 'description' => 'كونسول بسيط يوازن بين الكتلة والفراغ.',
+                'details' => 'بيانات تجريبية للتطوير.', 'material' => 'حجر', 'room' => 'المدخل', 'featured' => false,
+                'sku' => 'BAS-CONSOLE-STONE-01', 'variant' => 'حجر رملي', 'price' => 1650,
+                'media' => [['images/editorial/hero.jpg', 'كونسول حجري ضمن مساحة منزلية دافئة', 0]],
+            ],
         ];
 
         foreach ($products as $index => $data) {
@@ -107,8 +180,13 @@ class DatabaseSeeder extends Seeder
             ]);
 
             $variants = $data['variants'] ?? [[
-                'sku' => $data['sku'], 'name' => $data['variant'], 'price' => $data['price'],
-                'inventory' => 25 + $index, 'default' => true, 'active' => true, 'attribute_values' => [],
+                'sku' => $data['sku'],
+                'name' => $data['variant'],
+                'price' => $data['price'],
+                'inventory' => 25 + $index,
+                'default' => true,
+                'active' => true,
+                'attribute_values' => [],
             ]];
 
             foreach ($variants as $variantData) {
@@ -124,7 +202,9 @@ class DatabaseSeeder extends Seeder
                 ]);
 
                 $optionIds = collect($variantData['attribute_values'])
-                    ->map(fn (string $value, string $attributeCode): int => $attributeOptions[$attributeCode][$value]->id)
+                    ->map(function (string $value, string $attributeCode) use ($attributeOptions): int {
+                        return $attributeOptions[$attributeCode][$value]->id;
+                    })
                     ->values()
                     ->all();
 
@@ -132,7 +212,12 @@ class DatabaseSeeder extends Seeder
             }
 
             foreach ($data['media'] as [$path, $alt, $sortOrder]) {
-                ProductMedia::create(['product_id' => $product->id, 'path' => $path, 'alt_ar' => $alt, 'sort_order' => $sortOrder]);
+                ProductMedia::create([
+                    'product_id' => $product->id,
+                    'path' => $path,
+                    'alt_ar' => $alt,
+                    'sort_order' => $sortOrder,
+                ]);
             }
         }
     }
