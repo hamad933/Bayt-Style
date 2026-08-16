@@ -27,8 +27,14 @@ jobs:
       QUEUE_CONNECTION: sync
 
     steps:
-      - name: Check out proposal
+      - name: Check out exact proposal HEAD
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact proposal HEAD
+        if: github.event_name == 'pull_request'
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
 
       - name: Set up PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -47,12 +53,9 @@ jobs:
         run: |
           set -euo pipefail
           sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl --fail --silent --show-error \
-            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
-            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo curl --fail --silent --show-error -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
           . /etc/os-release
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-17
           sudo systemctl stop postgresql || true
@@ -87,6 +90,11 @@ jobs:
       - name: Reset demo data for browser verification
         run: php artisan migrate:fresh --seed --force
 
+      - name: Record exact evidence HEAD
+        run: |
+          mkdir -p storage/test-artifacts
+          git rev-parse HEAD > storage/test-artifacts/exact-head.txt
+
       - name: Install Chromium for the single browser verification layer
         run: npx playwright install --with-deps chromium
 
@@ -111,7 +119,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rp01-s01-s05-browser-evidence
+          name: rp01-s01-s06-browser-evidence
           path: |
             storage/test-artifacts/
             playwright-report/
