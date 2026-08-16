@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductMedia;
 use App\Models\Variant;
+use App\Models\VariantAttribute;
+use App\Models\VariantAttributeOption;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -23,13 +25,71 @@ class DatabaseSeeder extends Seeder
             return [$data['slug'] => $category];
         });
 
+        $attributeOptions = [];
+        foreach ([
+            'color' => [
+                'name_ar' => 'اللون',
+                'sort_order' => 10,
+                'options' => [
+                    ['code' => 'olive', 'value_ar' => 'زيتوني', 'sort_order' => 10],
+                    ['code' => 'sand', 'value_ar' => 'رملي', 'sort_order' => 20],
+                ],
+            ],
+            'finish' => [
+                'name_ar' => 'تشطيب القاعدة',
+                'sort_order' => 20,
+                'options' => [
+                    ['code' => 'dark-walnut', 'value_ar' => 'جوزي داكن', 'sort_order' => 10],
+                    ['code' => 'natural-oak', 'value_ar' => 'بلوط طبيعي', 'sort_order' => 20],
+                ],
+            ],
+        ] as $attributeCode => $attributeData) {
+            $attribute = VariantAttribute::create([
+                'code' => $attributeCode,
+                'name_ar' => $attributeData['name_ar'],
+                'sort_order' => $attributeData['sort_order'],
+            ]);
+
+            foreach ($attributeData['options'] as $optionData) {
+                $option = VariantAttributeOption::create([
+                    'variant_attribute_id' => $attribute->id,
+                    'code' => $optionData['code'],
+                    'value_ar' => $optionData['value_ar'],
+                    'sort_order' => $optionData['sort_order'],
+                ]);
+                $attributeOptions[$attributeCode][$option->value_ar] = $option;
+            }
+        }
+
         $products = [
             [
                 'category' => 'seating', 'name_ar' => 'كرسي استرخاء مخملي', 'slug' => 'olive-velvet-lounge-chair',
                 'short' => 'قطعة ذات حضور هادئ وخطوط ناعمة، مصممة لتنسجم بصريًا مع مساحات المعيشة الدافئة.',
-                'description' => 'كرسي استرخاء بلون زيتوني هادئ وملمس مخملي ظاهر، مع هيئة مستديرة تمنحه حضورًا بصريًا مريحًا داخل مساحات الجلوس.',
-                'details' => 'خيار بيع واحد معروض في هذه المرحلة. لا تتضمن الصفحة أي مصفوفة خيارات أو تخصيصات من نطاق S04.',
-                'material' => 'مخمل', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-CHAIR-OLV-01', 'variant' => 'مخمل زيتوني', 'price' => 1950,
+                'description' => 'كرسي استرخاء بملمس مخملي ظاهر وهيئة مستديرة، مع خيارات بيع فعلية للون وتشطيب القاعدة ضمن بيانات التطوير.',
+                'details' => 'بيانات تطوير متعمدة لتجربة S04: اللون وتشطيب القاعدة يحددان Variant حقيقيًا، ولا تمثل هذه البيانات كتالوجًا إنتاجيًا.',
+                'material' => 'مخمل', 'room' => 'المعيشة', 'featured' => true,
+                'variants' => [
+                    [
+                        'sku' => 'BAS-CHAIR-OLV-01', 'name' => 'مخمل زيتوني · جوزي داكن', 'price' => 1950,
+                        'inventory' => 25, 'default' => true, 'active' => true,
+                        'attribute_values' => ['color' => 'زيتوني', 'finish' => 'جوزي داكن'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-SAND-01', 'name' => 'مخمل رملي · جوزي داكن', 'price' => 2050,
+                        'inventory' => 18, 'default' => false, 'active' => true,
+                        'attribute_values' => ['color' => 'رملي', 'finish' => 'جوزي داكن'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-OLV-OAK-01', 'name' => 'مخمل زيتوني · بلوط طبيعي', 'price' => 1980,
+                        'inventory' => 12, 'default' => false, 'active' => true,
+                        'attribute_values' => ['color' => 'زيتوني', 'finish' => 'بلوط طبيعي'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-SAND-OAK-01', 'name' => 'مخمل رملي · بلوط طبيعي', 'price' => 2080,
+                        'inventory' => 0, 'default' => false, 'active' => false,
+                        'attribute_values' => ['color' => 'رملي', 'finish' => 'بلوط طبيعي'],
+                    ],
+                ],
                 'media' => [
                     ['images/products/chair-main.jpg', 'كرسي استرخاء مخملي بلون زيتوني', 0],
                     ['images/products/chair-detail-side.jpg', 'منظر جانبي لكرسي الاسترخاء المخملي', 1],
@@ -119,16 +179,37 @@ class DatabaseSeeder extends Seeder
                 'published_at' => now()->subDays(20 - $index),
             ]);
 
-            Variant::create([
-                'product_id' => $product->id,
+            $variants = $data['variants'] ?? [[
                 'sku' => $data['sku'],
-                'name_ar' => $data['variant'],
+                'name' => $data['variant'],
                 'price' => $data['price'],
-                'currency' => 'SAR',
-                'inventory_quantity' => 25 + $index,
-                'is_default' => true,
-                'is_active' => true,
-            ]);
+                'inventory' => 25 + $index,
+                'default' => true,
+                'active' => true,
+                'attribute_values' => [],
+            ]];
+
+            foreach ($variants as $variantData) {
+                $variant = Variant::create([
+                    'product_id' => $product->id,
+                    'sku' => $variantData['sku'],
+                    'name_ar' => $variantData['name'],
+                    'price' => $variantData['price'],
+                    'currency' => 'SAR',
+                    'inventory_quantity' => $variantData['inventory'],
+                    'is_default' => $variantData['default'],
+                    'is_active' => $variantData['active'],
+                ]);
+
+                $optionIds = collect($variantData['attribute_values'])
+                    ->map(function (string $value, string $attributeCode) use ($attributeOptions): int {
+                        return $attributeOptions[$attributeCode][$value]->id;
+                    })
+                    ->values()
+                    ->all();
+
+                $variant->attributeOptions()->sync($optionIds);
+            }
 
             foreach ($data['media'] as [$path, $alt, $sortOrder]) {
                 ProductMedia::create([

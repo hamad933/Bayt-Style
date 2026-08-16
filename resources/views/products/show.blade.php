@@ -4,7 +4,11 @@
 @section('description', $product->short_description_ar)
 
 @section('content')
-<section class="product-detail shell" x-data="productDetail({{ $product->id }}, {{ $product->defaultVariant->id }}, {{ in_array($product->id, array_map('intval', session('wishlist', [])), true) ? 'true' : 'false' }})">
+@php
+    $saved = in_array($product->id, array_map('intval', session('wishlist', [])), true);
+    $compared = in_array($product->id, array_map('intval', session('comparison', [])), true);
+@endphp
+<section class="product-detail shell" x-data="productDetail(@js($variantConfig), {{ $saved ? 'true' : 'false' }})">
     <nav class="breadcrumbs product-breadcrumbs" aria-label="مسار التنقل">
         <a href="{{ route('home') }}">الرئيسية</a><span>‹</span>
         <a href="{{ route('catalog') }}">المنتجات</a><span>‹</span>
@@ -29,15 +33,53 @@
         </div>
 
         <div class="product-summary">
-            <p class="product-kicker">{{ $product->room_ar }} · {{ $product->defaultVariant->name_ar }}</p>
+            <p class="product-kicker">{{ $product->room_ar }} · <span x-text="selectedVariant?.name || @js($product->defaultVariant->name_ar)">{{ $product->defaultVariant->name_ar }}</span></p>
             <h1 data-testid="product-title">{{ $product->name_ar }}</h1>
             <p class="product-lead">{{ $product->short_description_ar }}</p>
-            <div class="detail-price"><bdi>{{ number_format((float) $product->defaultVariant->price, 0) }}</bdi> <span>ر.س</span></div>
+            <div class="detail-price" data-testid="variant-price"><bdi x-text="selectedVariant?.priceFormatted || @js(number_format((float) $product->defaultVariant->price, 0))">{{ number_format((float) $product->defaultVariant->price, 0) }}</bdi> <span>ر.س</span></div>
 
-            <div class="variant-summary">
-                <div><p class="eyebrow">الخيار الحالي</p><h2>وحدة البيع الحالية</h2></div>
-                <div class="variant-name"><span class="variant-dot" aria-hidden="true"></span>{{ $product->defaultVariant->name_ar }}</div>
-                <p>الخيار المعروض هو وحدة البيع الحالية لهذا المنتج. تظهر الخيارات الإضافية فقط عندما تكون متاحة للقطعة.</p>
+            @if(count($variantConfig['dimensions']))
+                <div class="variant-config" aria-labelledby="variant-config-title">
+                    <div class="variant-config-heading">
+                        <div>
+                            <p class="eyebrow">تهيئة القطعة</p>
+                            <h2 id="variant-config-title">اختر وحدة البيع</h2>
+                        </div>
+                        <span class="variant-selection-count">{{ count($variantConfig['dimensions']) }} خيارات</span>
+                    </div>
+
+                    @foreach($variantConfig['dimensions'] as $dimension)
+                        <fieldset class="variant-option-group">
+                            <legend>{{ $dimension['label'] }}</legend>
+                            <div class="variant-options">
+                                @foreach($dimension['values'] as $value)
+                                    <button
+                                        type="button"
+                                        @click="choose(@js($dimension['key']), @js($value))"
+                                        :aria-pressed="isSelected(@js($dimension['key']), @js($value)).toString()"
+                                        :disabled="isOptionDisabled(@js($dimension['key']), @js($value))"
+                                        :class="{ 'is-selected': isSelected(@js($dimension['key']), @js($value)) }"
+                                        :title="isOptionDisabled(@js($dimension['key']), @js($value)) ? 'غير متاح مع الاختيارات الحالية' : ''"
+                                        data-option-key="{{ $dimension['key'] }}"
+                                        data-option-value="{{ $value }}"
+                                    >{{ $value }}</button>
+                                @endforeach
+                            </div>
+                        </fieldset>
+                    @endforeach
+                </div>
+            @endif
+
+            <div class="variant-summary" :class="{ 'is-unavailable': !canAdd }" aria-live="polite">
+                <div>
+                    <p class="eyebrow">الخيار الحالي</p>
+                    <h2 x-text="selectedVariant?.name || 'تركيبة غير متاحة'">{{ $product->defaultVariant->name_ar }}</h2>
+                </div>
+                <dl class="variant-facts">
+                    <div><dt>SKU</dt><dd dir="ltr" data-testid="variant-sku" x-text="selectedVariant?.sku || '—'">{{ $product->defaultVariant->sku }}</dd></div>
+                    <div><dt>التوفر</dt><dd data-testid="variant-availability" x-text="availabilityLabel">متاح</dd></div>
+                </dl>
+                <p x-show="!canAdd" data-testid="variant-unavailable">هذه التركيبة غير متاحة للشراء. اختر تركيبة أخرى من الخيارات المتاحة.</p>
             </div>
 
             <div class="purchase-row">
@@ -46,14 +88,26 @@
                     <output x-text="quantity" data-testid="quantity-value">1</output>
                     <button type="button" @click="increase" :disabled="quantity >= 10" aria-label="زيادة الكمية">+</button>
                 </div>
-                <button class="button button-primary add-cart" type="button" @click="addToCart" :disabled="adding" data-testid="add-to-cart">
+                <button class="button button-primary add-cart" type="button" @click="addToCart" :disabled="adding || !canAdd" data-testid="add-to-cart">
                     <span x-show="!adding">أضف إلى السلة</span><span x-show="adding">جارٍ الإضافة…</span>
                 </button>
             </div>
-            <button type="button" class="detail-wishlist" @click="toggleWishlist" :aria-pressed="saved.toString()" data-testid="detail-wishlist">
-                <span x-text="saved ? '♥' : '♡'">♡</span>
-                <span x-text="saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة'">حفظ في المفضلة</span>
-            </button>
+
+            <div class="detail-secondary-actions">
+                <button type="button" class="detail-wishlist" @click="toggleWishlist" :aria-pressed="saved.toString()" data-testid="detail-wishlist">
+                    <span x-text="saved ? '♥' : '♡'">{{ $saved ? '♥' : '♡' }}</span>
+                    <span x-text="saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة'">{{ $saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة' }}</span>
+                </button>
+                <button
+                    type="button"
+                    class="detail-compare"
+                    x-data="comparisonToggle({{ $product->id }}, {{ $compared ? 'true' : 'false' }})"
+                    @click="toggle"
+                    :aria-pressed="compared.toString()"
+                    :disabled="busy"
+                    data-testid="detail-comparison"
+                ><span x-text="compared ? 'إزالة من المقارنة' : 'أضف للمقارنة'">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
+            </div>
             <p class="inventory-boundary">إضافة القطعة إلى السلة لا تعني حجز المخزون.</p>
 
             <div class="service-notes">
@@ -81,9 +135,10 @@
             <div x-show="isOpen('materials')">
                 <dl class="detail-list">
                     <div><dt>الفئة</dt><dd>{{ $product->category->name_ar }}</dd></div>
-                    <div><dt>الخامة المرئية</dt><dd>{{ $product->material_ar }}</dd></div>
-                    <div><dt>الحالة المعروضة</dt><dd>خيار بيع واحد</dd></div>
+                    <div><dt>الخامة</dt><dd>{{ $product->material_ar }}</dd></div>
+                    <div><dt>حالة البيع</dt><dd>{{ $product->variants->count() > 1 ? 'خيارات Variant فعلية متعددة' : 'وحدة بيع واحدة' }}</dd></div>
                 </dl>
+                <p>{{ $product->details_ar }}</p>
             </div>
         </article>
         <article class="detail-accordion">

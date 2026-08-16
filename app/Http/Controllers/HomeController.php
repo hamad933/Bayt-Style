@@ -12,7 +12,7 @@ class HomeController extends Controller
         $featuredProducts = Product::query()
             ->published()
             ->where('is_featured', true)
-            ->with(['defaultVariant', 'primaryMedia'])
+            ->with(['defaultVariant', 'primaryMedia', 'variants'])
             ->orderBy('id')
             ->limit(4)
             ->get();
