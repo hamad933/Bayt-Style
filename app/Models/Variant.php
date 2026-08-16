@@ -9,7 +9,7 @@ class Variant extends Model
 {
     protected $fillable = [
         'product_id', 'sku', 'name_ar', 'price', 'currency',
-        'inventory_quantity', 'is_default', 'is_active',
+        'inventory_quantity', 'is_default', 'is_active', 'options',
     ];
 
     protected function casts(): array
@@ -19,11 +19,17 @@ class Variant extends Model
             'inventory_quantity' => 'integer',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
+            'options' => 'array',
         ];
     }
 
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function isSellable(): bool
+    {
+        return $this->is_active && $this->inventory_quantity > 0;
     }
 }

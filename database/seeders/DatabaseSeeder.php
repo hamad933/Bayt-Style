@@ -27,9 +27,31 @@ class DatabaseSeeder extends Seeder
             [
                 'category' => 'seating', 'name_ar' => 'كرسي استرخاء مخملي', 'slug' => 'olive-velvet-lounge-chair',
                 'short' => 'قطعة ذات حضور هادئ وخطوط ناعمة، مصممة لتنسجم بصريًا مع مساحات المعيشة الدافئة.',
-                'description' => 'كرسي استرخاء بلون زيتوني هادئ وملمس مخملي ظاهر، مع هيئة مستديرة تمنحه حضورًا بصريًا مريحًا داخل مساحات الجلوس.',
-                'details' => 'خيار بيع واحد معروض في هذه المرحلة. لا تتضمن الصفحة أي مصفوفة خيارات أو تخصيصات من نطاق S04.',
-                'material' => 'مخمل', 'room' => 'المعيشة', 'featured' => true, 'sku' => 'BAS-CHAIR-OLV-01', 'variant' => 'مخمل زيتوني', 'price' => 1950,
+                'description' => 'كرسي استرخاء بملمس مخملي ظاهر وهيئة مستديرة، مع خيارات بيع فعلية للون وتشطيب القاعدة ضمن بيانات التطوير.',
+                'details' => 'بيانات تطوير متعمدة لتجربة S04: اللون وتشطيب القاعدة يحددان Variant حقيقيًا، ولا تمثل هذه البيانات كتالوجًا إنتاجيًا.',
+                'material' => 'مخمل', 'room' => 'المعيشة', 'featured' => true,
+                'variants' => [
+                    [
+                        'sku' => 'BAS-CHAIR-OLV-01', 'name' => 'مخمل زيتوني · جوزي داكن', 'price' => 1950,
+                        'inventory' => 25, 'default' => true, 'active' => true,
+                        'options' => ['color' => 'زيتوني', 'finish' => 'جوزي داكن'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-SAND-01', 'name' => 'مخمل رملي · جوزي داكن', 'price' => 2050,
+                        'inventory' => 18, 'default' => false, 'active' => true,
+                        'options' => ['color' => 'رملي', 'finish' => 'جوزي داكن'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-OLV-OAK-01', 'name' => 'مخمل زيتوني · بلوط طبيعي', 'price' => 1980,
+                        'inventory' => 12, 'default' => false, 'active' => true,
+                        'options' => ['color' => 'زيتوني', 'finish' => 'بلوط طبيعي'],
+                    ],
+                    [
+                        'sku' => 'BAS-CHAIR-SAND-OAK-01', 'name' => 'مخمل رملي · بلوط طبيعي', 'price' => 2080,
+                        'inventory' => 0, 'default' => false, 'active' => false,
+                        'options' => ['color' => 'رملي', 'finish' => 'بلوط طبيعي'],
+                    ],
+                ],
                 'media' => [
                     ['images/products/chair-main.jpg', 'كرسي استرخاء مخملي بلون زيتوني', 0],
                     ['images/products/chair-detail-side.jpg', 'منظر جانبي لكرسي الاسترخاء المخملي', 1],
@@ -119,16 +141,29 @@ class DatabaseSeeder extends Seeder
                 'published_at' => now()->subDays(20 - $index),
             ]);
 
-            Variant::create([
-                'product_id' => $product->id,
+            $variants = $data['variants'] ?? [[
                 'sku' => $data['sku'],
-                'name_ar' => $data['variant'],
+                'name' => $data['variant'],
                 'price' => $data['price'],
-                'currency' => 'SAR',
-                'inventory_quantity' => 25 + $index,
-                'is_default' => true,
-                'is_active' => true,
-            ]);
+                'inventory' => 25 + $index,
+                'default' => true,
+                'active' => true,
+                'options' => [],
+            ]];
+
+            foreach ($variants as $variant) {
+                Variant::create([
+                    'product_id' => $product->id,
+                    'sku' => $variant['sku'],
+                    'name_ar' => $variant['name'],
+                    'options' => $variant['options'],
+                    'price' => $variant['price'],
+                    'currency' => 'SAR',
+                    'inventory_quantity' => $variant['inventory'],
+                    'is_default' => $variant['default'],
+                    'is_active' => $variant['active'],
+                ]);
+            }
 
             foreach ($data['media'] as [$path, $alt, $sortOrder]) {
                 ProductMedia::create([

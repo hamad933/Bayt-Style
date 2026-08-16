@@ -21,7 +21,12 @@ class CartController extends Controller
             'quantity' => ['required', 'integer', 'min:1', 'max:10'],
         ]);
 
-        $variant = Variant::query()->whereKey($validated['variant_id'])->where('is_active', true)->firstOrFail();
+        $variant = Variant::query()
+            ->whereKey($validated['variant_id'])
+            ->where('is_active', true)
+            ->where('inventory_quantity', '>', 0)
+            ->firstOrFail();
+
         $cart = $request->session()->get('cart', []);
         $current = (int) ($cart[$variant->id] ?? 0);
         $next = $current + (int) $validated['quantity'];
@@ -82,6 +87,7 @@ class CartController extends Controller
                 'variant_id' => $variant->id,
                 'product' => $variant->product->name_ar,
                 'variant' => $variant->name_ar,
+                'sku' => $variant->sku,
                 'quantity' => $quantity,
                 'price' => number_format((float) $variant->price, 0),
                 'line_total' => number_format($lineTotal, 0),

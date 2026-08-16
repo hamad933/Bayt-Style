@@ -21,7 +21,14 @@
         </form>
 
         <div class="header-actions">
-            <button class="wishlist-header" type="button" @click="$store.notice.show('يمكنك إدارة المفضلة من أزرار القلب على المنتجات.')" aria-label="المفضلة">♡</button>
+            <a class="commerce-link" href="{{ route('wishlist.index') }}" aria-label="المفضلة">
+                <span aria-hidden="true">♡</span>
+                <span class="commerce-count" x-text="$store.wishlist.count">{{ count(array_unique(array_map('intval', session('wishlist', [])))) }}</span>
+            </a>
+            <a class="commerce-link" href="{{ route('comparison.index') }}" aria-label="المقارنة">
+                <span aria-hidden="true">≍</span>
+                <span class="commerce-count" x-text="$store.comparison.count">{{ count(array_unique(array_map('intval', session('comparison', [])))) }}</span>
+            </a>
             <button class="text-action desktop-only" type="button" @click="loginOpen = true" :aria-expanded="loginOpen.toString()" aria-controls="login-dialog">تسجيل الدخول</button>
             <button class="icon-action" type="button" @click="$store.cart.openDrawer()" :aria-expanded="$store.cart.open.toString()" aria-controls="cart-drawer" aria-label="فتح السلة">
                 <span aria-hidden="true">◯</span>
@@ -36,6 +43,8 @@
             <a href="{{ route('catalog') }}">المنتجات</a>
             <a href="{{ route('catalog') }}?category=seating">المجموعات</a>
             <a href="{{ route('catalog') }}?room={{ urlencode('المعيشة') }}">الغرف</a>
+            <a href="{{ route('wishlist.index') }}">المفضلة <span x-text="'(' + $store.wishlist.count + ')' "></span></a>
+            <a href="{{ route('comparison.index') }}">المقارنة <span x-text="'(' + $store.comparison.count + ')' "></span></a>
             <a href="{{ route('home') }}#seasonal">الإلهام</a>
             <a href="#customer-service">خدمات العملاء</a>
             <button type="button" @click="mobileOpen = false; loginOpen = true">تسجيل الدخول</button>
@@ -72,6 +81,7 @@
                         <div class="cart-line-copy">
                             <strong x-text="item.product"></strong>
                             <span x-text="item.variant"></span>
+                            <small dir="ltr" x-text="item.sku"></small>
                             <span><bdi x-text="item.price"></bdi> ر.س</span>
                             <div class="mini-qty" :aria-label="`كمية ${item.product}`">
                                 <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity - 1)" :disabled="item.quantity <= 1" aria-label="تقليل الكمية">−</button>

@@ -52,4 +52,26 @@ class Product extends Model
     {
         return $query->whereNotNull('published_at')->where('published_at', '<=', now());
     }
+
+    public function resolveVariant(array $options): ?Variant
+    {
+        $normalized = $this->normalizeOptions($options);
+        $variants = $this->relationLoaded('variants') ? $this->variants : $this->variants()->get();
+
+        return $variants->first(function (Variant $variant) use ($normalized): bool {
+            return $this->normalizeOptions($variant->options ?? []) === $normalized;
+        });
+    }
+
+    private function normalizeOptions(array $options): array
+    {
+        $normalized = collect($options)
+            ->filter(fn ($value, $key) => is_string($key) && is_scalar($value) && trim((string) $value) !== '')
+            ->map(fn ($value) => trim((string) $value))
+            ->all();
+
+        ksort($normalized);
+
+        return $normalized;
+    }
 }

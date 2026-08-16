@@ -158,6 +158,6 @@ class ProductWaveTest extends TestCase
     {
         $this->assertSame(5, Category::count());
         $this->assertSame(10, Product::count());
-        $this->assertSame(10, Variant::count());
+        $this->assertSame(13, Variant::count());
     }
 }

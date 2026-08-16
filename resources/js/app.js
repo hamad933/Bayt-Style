@@ -23,7 +23,7 @@ async function requestJson(url, options = {}) {
     const response = await fetch(url, {
         credentials: 'same-origin',
         headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrf(),
             ...(options.headers || {}),
@@ -47,6 +47,34 @@ document.addEventListener('alpine:init', () => {
             this.message = message;
             clearTimeout(this.timer);
             this.timer = setTimeout(() => { this.message = ''; }, 2800);
+        },
+    });
+
+    Alpine.store('wishlist', {
+        count: Number(document.documentElement.dataset.wishlistCount || 0),
+        apply(data) {
+            this.count = Number(data.count || 0);
+        },
+    });
+
+    Alpine.store('comparison', {
+        count: Number(document.documentElement.dataset.comparisonCount || 0),
+        limit: 3,
+        apply(data) {
+            this.count = Number(data.count || 0);
+            this.limit = Number(data.limit || 3);
+        },
+        async add(productId) {
+            const data = await requestJson(`/comparison/${productId}`, { method: 'POST', body: '{}' });
+            this.apply(data);
+            Alpine.store('notice').show(data.already_present ? 'المنتج موجود بالفعل في المقارنة.' : 'تمت إضافة المنتج إلى المقارنة.');
+            return data;
+        },
+        async remove(productId) {
+            const data = await requestJson(`/comparison/${productId}`, { method: 'DELETE' });
+            this.apply(data);
+            Alpine.store('notice').show('تمت إزالة المنتج من المقارنة.');
+            return data;
         },
     });
 
@@ -154,18 +182,24 @@ document.addEventListener('alpine:init', () => {
             });
         },
         trapFocus(event, container) { trapFocusWithin(event, container); },
-
     }));
 
     Alpine.data('wishlistToggle', (productId, initialSaved = false) => ({
         saved: Boolean(initialSaved),
         busy: false,
+        init() {
+            window.addEventListener('wishlist-changed', (event) => {
+                if (Number(event.detail?.productId) === Number(productId)) this.saved = Boolean(event.detail.saved);
+            });
+        },
         async toggle() {
             if (this.busy) return;
             this.busy = true;
             try {
                 const data = await requestJson(`/wishlist/${productId}/toggle`, { method: 'POST', body: '{}' });
                 this.saved = Boolean(data.saved);
+                Alpine.store('wishlist').apply(data);
+                window.dispatchEvent(new CustomEvent('wishlist-changed', { detail: { productId, saved: this.saved } }));
                 Alpine.store('notice').show(this.saved ? 'تم حفظ القطعة في المفضلة.' : 'تمت إزالة القطعة من المفضلة.');
             } catch (error) {
                 Alpine.store('notice').show(error.message);
@@ -175,33 +209,98 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.data('productDetail', (productId, variantId, initialSaved = false) => ({
-        quantity: 1,
-        saved: Boolean(initialSaved),
-        adding: false,
-        increase() { if (this.quantity < 10) this.quantity += 1; },
-        decrease() { if (this.quantity > 1) this.quantity -= 1; },
-        async addToCart() {
-            if (this.adding) return;
-            this.adding = true;
+    Alpine.data('comparisonToggle', (productId, initialCompared = false) => ({
+        compared: Boolean(initialCompared),
+        busy: false,
+        init() {
+            window.addEventListener('comparison-changed', (event) => {
+                if (Number(event.detail?.productId) === Number(productId)) this.compared = Boolean(event.detail.compared);
+            });
+        },
+        async toggle() {
+            if (this.busy) return;
+            this.busy = true;
             try {
-                await Alpine.store('cart').add(variantId, this.quantity);
+                if (this.compared) {
+                    await Alpine.store('comparison').remove(productId);
+                    this.compared = false;
+                } else {
+                    await Alpine.store('comparison').add(productId);
+                    this.compared = true;
+                }
+                window.dispatchEvent(new CustomEvent('comparison-changed', { detail: { productId, compared: this.compared } }));
             } catch (error) {
                 Alpine.store('notice').show(error.message);
             } finally {
-                this.adding = false;
-            }
-        },
-        async toggleWishlist() {
-            try {
-                const data = await requestJson(`/wishlist/${productId}/toggle`, { method: 'POST', body: '{}' });
-                this.saved = Boolean(data.saved);
-                Alpine.store('notice').show(this.saved ? 'تم حفظ القطعة في المفضلة.' : 'تمت إزالة القطعة من المفضلة.');
-            } catch (error) {
-                Alpine.store('notice').show(error.message);
+                this.busy = false;
             }
         },
     }));
+
+    Alpine.data('productDetail', (config, initialSaved = false) => {
+        const defaultVariant = config.variants.find((variant) => Number(variant.id) === Number(config.defaultVariantId)) || config.variants[0];
+
+        return {
+            config,
+            quantity: 1,
+            saved: Boolean(initialSaved),
+            adding: false,
+            selectedOptions: { ...(defaultVariant?.options || {}) },
+            get selectedVariant() {
+                return this.config.variants.find((variant) => this.config.dimensions.every((dimension) => {
+                    return String(variant.options?.[dimension.key] ?? '') === String(this.selectedOptions[dimension.key] ?? '');
+                })) || null;
+            },
+            get canAdd() {
+                return Boolean(this.selectedVariant?.available);
+            },
+            get availabilityLabel() {
+                if (!this.selectedVariant) return 'تركيبة غير موجودة';
+                return this.selectedVariant.available ? 'متاح للشراء في بيانات التطوير' : 'غير متاح حاليًا';
+            },
+            increase() { if (this.quantity < 10) this.quantity += 1; },
+            decrease() { if (this.quantity > 1) this.quantity -= 1; },
+            isSelected(key, value) {
+                return String(this.selectedOptions[key] ?? '') === String(value);
+            },
+            isOptionDisabled(key, value) {
+                if (this.isSelected(key, value)) return false;
+                const candidate = { ...this.selectedOptions, [key]: value };
+                return !this.config.variants.some((variant) => {
+                    if (!variant.available) return false;
+                    return this.config.dimensions.every((dimension) => {
+                        return String(variant.options?.[dimension.key] ?? '') === String(candidate[dimension.key] ?? '');
+                    });
+                });
+            },
+            choose(key, value) {
+                if (this.isOptionDisabled(key, value)) return;
+                this.selectedOptions = { ...this.selectedOptions, [key]: value };
+            },
+            async addToCart() {
+                if (this.adding || !this.canAdd) return;
+                this.adding = true;
+                try {
+                    await Alpine.store('cart').add(this.selectedVariant.id, this.quantity);
+                } catch (error) {
+                    Alpine.store('notice').show(error.message);
+                } finally {
+                    this.adding = false;
+                }
+            },
+            async toggleWishlist() {
+                try {
+                    const data = await requestJson(`/wishlist/${this.config.productId}/toggle`, { method: 'POST', body: '{}' });
+                    this.saved = Boolean(data.saved);
+                    Alpine.store('wishlist').apply(data);
+                    window.dispatchEvent(new CustomEvent('wishlist-changed', { detail: { productId: this.config.productId, saved: this.saved } }));
+                    Alpine.store('notice').show(this.saved ? 'تم حفظ القطعة في المفضلة.' : 'تمت إزالة القطعة من المفضلة.');
+                } catch (error) {
+                    Alpine.store('notice').show(error.message);
+                }
+            },
+        };
+    });
 
     Alpine.data('gallery', (count) => ({
         active: 0,
