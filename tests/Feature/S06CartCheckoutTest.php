@@ -6,9 +6,14 @@ use App\Commerce\CheckoutTotals;
 use App\Commerce\Shipping\ShippingMethodProvider;
 use App\Commerce\Tax\TaxCalculator;
 use App\Models\Order;
+use App\Models\OrderEvent;
 use App\Models\Variant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use LogicException;
+use PDO;
 use Tests\TestCase;
 
 class S06CartCheckoutTest extends TestCase
@@ -98,17 +103,43 @@ class S06CartCheckoutTest extends TestCase
         $this->assertSame('SAR', $calculated['currency']);
     }
 
-    public function test_confirmed_checkout_creates_one_durable_snapshot_and_duplicate_submit_is_idempotent(): void
+    public function test_tampered_checkout_token_is_rejected_before_order_creation(): void
+    {
+        $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
+        $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 1])->assertCreated();
+        $this->get('/checkout')->assertOk();
+        $issuedToken = (string) session('checkout_token');
+        $tamperedToken = (string) Str::uuid();
+        $this->assertNotSame($issuedToken, $tamperedToken);
+        $this->post('/checkout', $this->validCheckoutPayload($tamperedToken))->assertSessionHasErrors(['checkout_token']);
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('order_events', 0);
+    }
+
+    public function test_cart_mutation_invalidates_previous_checkout_token(): void
+    {
+        $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
+        $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 1])->assertCreated();
+        $this->get('/checkout')->assertOk();
+        $firstToken = (string) session('checkout_token');
+        $this->patch('/cart/items/'.$variant->id, ['quantity' => 2])->assertRedirect('/cart');
+        $this->assertNull(session('checkout_token'));
+        $this->get('/checkout')->assertOk();
+        $this->assertNotSame($firstToken, (string) session('checkout_token'));
+    }
+
+    public function test_confirmed_checkout_creates_one_durable_snapshot_and_same_token_replay_is_idempotent(): void
     {
         $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
         $inventory = $variant->inventory_quantity;
         $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 2])->assertCreated();
         $this->get('/checkout')->assertOk();
-        $token = session('checkout_token');
+        $token = (string) session('checkout_token');
         $payload = $this->validCheckoutPayload($token);
         $first = $this->post('/checkout', $payload);
         $order = Order::query()->with('lines.options')->sole();
         $first->assertRedirect(route('checkout.confirmation', $order));
+        $this->assertSame($token, session('checkout_token'));
         $this->assertSame('pending_payment', $order->order_state);
         $this->assertSame('pending', $order->payment_state);
         $this->assertSame('not_reserved', $order->reservation_state);
@@ -140,6 +171,86 @@ class S06CartCheckoutTest extends TestCase
         $this->post('/checkout', $payload)->assertRedirect(route('checkout.confirmation', $order));
         $this->assertDatabaseCount('orders', 1);
         $this->assertDatabaseCount('order_lines', 1);
+        $this->assertDatabaseCount('order_line_options', 2);
+        $this->assertDatabaseCount('order_events', 1);
+    }
+
+    public function test_submission_path_uses_postgresql_transaction_advisory_lock(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') $this->markTestSkipped('PostgreSQL-specific integrity test.');
+        $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
+        $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 1])->assertCreated();
+        $this->get('/checkout')->assertOk();
+        $token = (string) session('checkout_token');
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void { $queries[] = $query->sql; });
+        $this->post('/checkout', $this->validCheckoutPayload($token));
+        $this->assertTrue(collect($queries)->contains(fn (string $sql): bool => str_contains($sql, 'pg_advisory_xact_lock')));
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('order_events', 1);
+    }
+
+    public function test_postgresql_advisory_lock_serializes_same_checkout_token_across_connections(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') $this->markTestSkipped('PostgreSQL-specific integrity test.');
+        $config = config('database.connections.pgsql');
+        $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $config['host'], $config['port'], $config['database']);
+        $first = new PDO($dsn, $config['username'], $config['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $second = new PDO($dsn, $config['username'], $config['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $token = (string) Str::uuid();
+        try {
+            $first->beginTransaction();
+            $lock = $first->prepare('select pg_advisory_xact_lock(hashtextextended(:token, 0))');
+            $lock->execute(['token' => $token]);
+            $second->beginTransaction();
+            $tryLock = $second->prepare('select pg_try_advisory_xact_lock(hashtextextended(:token, 0))');
+            $tryLock->execute(['token' => $token]);
+            $this->assertFalse((bool) $tryLock->fetchColumn());
+            $first->commit();
+            $tryLock->execute(['token' => $token]);
+            $this->assertTrue((bool) $tryLock->fetchColumn());
+        } finally {
+            if ($first->inTransaction()) $first->rollBack();
+            if ($second->inTransaction()) $second->rollBack();
+        }
+    }
+
+    public function test_initial_order_event_is_typed_exactly_once_and_replay_safe(): void
+    {
+        $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
+        $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 1])->assertCreated();
+        $this->get('/checkout')->assertOk();
+        $token = (string) session('checkout_token');
+        $payload = $this->validCheckoutPayload($token);
+        $this->post('/checkout', $payload);
+        $order = Order::sole();
+        $event = OrderEvent::sole();
+        $this->assertSame($order->id, $event->order_id);
+        $this->assertSame('order_created', $event->event_type);
+        $this->assertSame('guest_customer', $event->actor_type);
+        $this->assertSame('order', $event->entity_type);
+        $this->assertSame($order->order_number, $event->order_reference);
+        $this->assertSame('pending_payment', $event->resulting_order_state);
+        $this->assertSame('pending', $event->resulting_payment_state);
+        $this->assertSame('not_reserved', $event->resulting_reservation_state);
+        $this->assertSame('not_started', $event->resulting_fulfillment_state);
+        $this->assertSame('checkout_submitted', $event->reason_code);
+        $this->assertSame($token, $event->correlation_id);
+        $this->assertNotNull($event->occurred_at);
+        $this->post('/checkout', $payload)->assertRedirect(route('checkout.confirmation', $order));
+        $this->assertDatabaseCount('order_events', 1);
+    }
+
+    public function test_order_events_are_append_only_through_normal_model_behavior(): void
+    {
+        $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
+        $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 1])->assertCreated();
+        $this->get('/checkout')->assertOk();
+        $token = (string) session('checkout_token');
+        $this->post('/checkout', $this->validCheckoutPayload($token));
+        $event = OrderEvent::sole();
+        $this->expectException(LogicException::class);
+        $event->update(['reason_code' => 'changed']);
     }
 
     public function test_server_revalidates_cart_again_at_final_submission(): void
@@ -179,8 +290,12 @@ class S06CartCheckoutTest extends TestCase
         foreach (['customer_full_name','customer_email','customer_phone','delivery_country_code','delivery_region','delivery_city','delivery_district','delivery_address_line','shipping_method_code','tax_policy_code','payment_state','order_state','reservation_state','fulfillment_state','consent_version'] as $column) {
             $this->assertTrue(Schema::hasColumn('orders', $column), $column);
         }
+        foreach (['order_id','event_type','actor_type','entity_type','order_reference','resulting_order_state','resulting_payment_state','resulting_reservation_state','resulting_fulfillment_state','reason_code','correlation_id','occurred_at'] as $column) {
+            $this->assertTrue(Schema::hasColumn('order_events', $column), $column);
+        }
         $this->assertFalse(Schema::hasColumn('orders', 'address'));
         $this->assertFalse(Schema::hasColumn('orders', 'payload'));
+        $this->assertFalse(Schema::hasColumn('order_events', 'payload'));
         $this->assertTrue(Schema::hasTable('order_lines'));
         $this->assertTrue(Schema::hasTable('order_line_options'));
     }
@@ -195,6 +310,26 @@ class S06CartCheckoutTest extends TestCase
         $this->assertSame('manual_pending_demo', config('commerce.checkout.payment_method_code'));
     }
 
+    public function test_customer_surfaces_use_natural_copy_without_exposing_internal_identifiers(): void
+    {
+        $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
+        $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 1])->assertCreated();
+        $cart = $this->get('/cart')->assertOk();
+        $checkout = $this->get('/checkout')->assertOk();
+        foreach (['S06','S07','Variant','Checkout','SLA','demo_unconfigured_zero','manual_pending_demo','rp01-s06-development-consent-v1','pending_payment','not_reserved','not_started'] as $term) {
+            $cart->assertDontSeeText($term);
+            $checkout->assertDontSeeText($term);
+        }
+        $token = (string) session('checkout_token');
+        $this->post('/checkout', $this->validCheckoutPayload($token));
+        $order = Order::sole();
+        $confirmation = $this->get(route('checkout.confirmation', $order))->assertOk();
+        $confirmation->assertSeeText('الدفع لم يكتمل بعد')->assertSeeText('المخزون غير محجوز حتى الآن');
+        foreach (['S06','S07','Variant','Checkout','SLA','demo_unconfigured_zero','manual_pending_demo','rp01-s06-development-consent-v1','pending_payment','not_reserved','not_started'] as $term) {
+            $confirmation->assertDontSeeText($term);
+        }
+    }
+
     public function test_confirmation_is_session_bound_and_truthfully_reports_pending_unreserved_states(): void
     {
         $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
@@ -204,7 +339,7 @@ class S06CartCheckoutTest extends TestCase
         $this->post('/checkout', $this->validCheckoutPayload($token));
         $order = Order::sole();
         $this->get(route('checkout.confirmation', $order))->assertOk()->assertSee($order->order_number)
-            ->assertSee('معلّق / غير مسدد')->assertSee('غير محجوز — السياسة غير مفعّلة')
+            ->assertSee('الدفع لم يكتمل بعد')->assertSee('المخزون غير محجوز حتى الآن')
             ->assertDontSee('تم الدفع بنجاح')->assertDontSee('تم حجز المخزون');
         $this->flushSession();
         $this->get(route('checkout.confirmation', $order))->assertForbidden();

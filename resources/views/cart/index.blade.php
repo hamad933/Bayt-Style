@@ -19,7 +19,7 @@
         <div class="s06-empty" data-testid="cart-empty">
             <p class="eyebrow">السلة فارغة</p>
             <h2>ابدأ بقطعة تحبها</h2>
-            <p>استكشف التشكيلة وأضف الـ Variant المناسب لك، ثم عد إلى هنا لمراجعة التفاصيل.</p>
+            <p>استكشف التشكيلة واختر المنتج والخيارات المناسبة لك، ثم عد إلى هنا لمراجعة التفاصيل.</p>
             <a class="button button-primary" href="{{ route('catalog') }}">استكشف المنتجات</a>
         </div>
     @else
@@ -63,14 +63,14 @@
                 <h2 id="cart-summary-title">ملخص السلة</h2>
                 <dl>
                     <div><dt>المجموع الفرعي</dt><dd data-testid="cart-subtotal"><bdi>{{ $cart['subtotal'] }}</bdi> ر.س</dd></div>
-                    <div><dt>الشحن</dt><dd>يُحسب في خطوة الإتمام</dd></div>
-                    <div><dt>الضريبة</dt><dd>السياسة الإنتاجية غير مفعّلة في S06</dd></div>
+                    <div><dt>التوصيل</dt><dd>تظهر الرسوم في خطوة إتمام الطلب</dd></div>
+                    <div><dt>الضريبة</dt><dd>تظهر وفق السياسة المطبقة عند إتمام الطلب</dd></div>
                 </dl>
                 <div class="s06-total-preview">
-                    <span>الإجمالي قبل الشحن/الضريبة</span>
+                    <span>الإجمالي قبل التوصيل والضريبة</span>
                     <strong><bdi>{{ $cart['subtotal'] }}</bdi> ر.س</strong>
                 </div>
-                <p class="s06-boundary-note">سيُعاد التحقق من الـ Variant والسعر والتوفر على الخادم قبل دخول Checkout ومرة أخرى قبل إنشاء الطلب.</p>
+                <p class="s06-boundary-note">سنتحقق من الخيارات والسعر والتوفر مرة أخرى قبل إتمام الطلب.</p>
                 @if($cart['checkout_blocked'])
                     <button class="button button-primary" type="button" disabled>المتابعة غير متاحة قبل المراجعة</button>
                 @else

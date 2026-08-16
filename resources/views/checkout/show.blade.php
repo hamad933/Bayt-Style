@@ -6,7 +6,7 @@
     <header class="s06-page-head checkout-head">
         <p class="eyebrow">إتمام الطلب كزائر</p>
         <h1>تفاصيل واضحة قبل التأكيد</h1>
-        <p>هذه بيئة S06 غير مفعّلة تجاريًا: الشحن والضريبة وطريقة الدفع أدناه حدود تطويرية لإثبات الرحلة وليست سياسة إنتاجية.</p>
+        <p>هذه تجربة شراء غير مفعّلة تجاريًا بالكامل. رسوم التوصيل والضريبة وطريقة الدفع المعروضة حاليًا لأغراض تجربة الطلب وليست سياسة نهائية.</p>
     </header>
 
     @if($errors->any())
@@ -49,27 +49,27 @@
 
             <section class="checkout-section" aria-labelledby="delivery-title">
                 <span class="checkout-step" aria-hidden="true">03</span>
-                <div><p class="eyebrow">طريقة التسليم</p><h2 id="delivery-title">اختر طريقة الشحن</h2></div>
+                <div><p class="eyebrow">طريقة التسليم</p><h2 id="delivery-title">اختر طريقة التوصيل</h2></div>
                 <div class="choice-list">
                     @foreach($methods as $method)
                         <label class="choice">
                             <input type="radio" name="shipping_method" value="{{ $method['code'] }}" @checked(old('shipping_method',$shippingCode) === $method['code']) required>
-                            <span><strong>{{ $method['name_ar'] }}</strong><small>قيمة تطويرية حتمية لا تمثل تسعير ناقل إنتاجي.</small></span>
+                            <span><strong>{{ $method['name_ar'] }}</strong><small>رسوم التوصيل المعروضة حاليًا تجريبية وليست تسعيرًا نهائيًا.</small></span>
                             <bdi>{{ number_format($method['amount_minor']/100,0) }} ر.س</bdi>
                         </label>
                     @endforeach
                 </div>
-                <p class="s06-boundary-note">التوقيت والرسوم الفعلية يعتمدان على الوجهة وسياسة الطلب عند تفعيل مزود شحن معتمد؛ لا يوجد SLA لناقل مفعّل في S06.</p>
+                <p class="s06-boundary-note">سيتم تحديد تفاصيل التوصيل النهائية وفق الوجهة والسياسة المعتمدة. لا يوجد موعد توصيل مؤكد حاليًا.</p>
             </section>
 
             <section class="checkout-section" aria-labelledby="payment-title">
                 <span class="checkout-step" aria-hidden="true">04</span>
-                <div><p class="eyebrow">حد الدفع</p><h2 id="payment-title">طريقة الدفع</h2></div>
+                <div><p class="eyebrow">الدفع</p><h2 id="payment-title">حالة الدفع الحالية</h2></div>
                 <label class="choice">
                     <input type="radio" name="payment_method" value="{{ config('commerce.checkout.payment_method_code') }}" checked required>
-                    <span><strong>مسار يدوي تجريبي — قيد الانتظار</strong><small>لا توجد بوابة دفع مفعّلة، ولا بيانات بنكية أو بطاقة مطلوبة.</small></span>
+                    <span><strong>الدفع غير مكتمل بعد</strong><small>لا توجد وسيلة دفع إلكترونية مفعّلة حاليًا، ولن نطلب بيانات بطاقة أو بيانات بنكية في هذه الخطوة.</small></span>
                 </label>
-                <p class="s06-boundary-note">تأكيد Checkout لن يعني أن الدفع نجح. ستبقى حالة الدفع <bdi dir="ltr">pending / unpaid</bdi> حتى توجد سلطة دفع مستقلة في موجة لاحقة.</p>
+                <p class="s06-boundary-note">تأكيد الطلب لا يعني نجاح الدفع. سيبقى الدفع غير مكتمل حتى يتم التحقق منه عبر وسيلة معتمدة.</p>
             </section>
 
             <section class="checkout-section" aria-labelledby="consent-title">
@@ -77,7 +77,7 @@
                 <div><p class="eyebrow">المراجعة والموافقة</p><h2 id="consent-title">راجع ثم أكّد</h2></div>
                 <label class="consent-row">
                     <input type="checkbox" name="terms" value="1" @checked(old('terms')) required>
-                    <span>أوافق صراحةً على إرسال هذا الطلب ضمن سياسة الموافقة التطويرية ذات الإصدار <bdi dir="ltr">{{ config('commerce.checkout.consent_version') }}</bdi>. هذه الصياغة ليست وثيقة قانونية إنتاجية نهائية.</span>
+                    <span>أوافق على إرسال بيانات هذا الطلب للمراجعة وفق الشروط المعروضة في هذه التجربة. هذه الصياغة مؤقتة وليست بديلًا عن الشروط القانونية النهائية عند الإطلاق.</span>
                 </label>
             </section>
         </div>
@@ -94,13 +94,13 @@
             </div>
             <dl class="checkout-totals">
                 <div><dt>المجموع الفرعي</dt><dd><bdi>{{ number_format($totals['subtotal_minor']/100,0) }}</bdi> ر.س</dd></div>
-                <div><dt>الشحن التجريبي</dt><dd><bdi>{{ number_format($totals['shipping_minor']/100,0) }}</bdi> ر.س</dd></div>
-                <div><dt>الضريبة</dt><dd><bdi>{{ number_format($totals['tax_minor']/100,0) }}</bdi> ر.س</dd></div>
+                <div><dt>رسوم التوصيل الحالية</dt><dd><bdi>{{ number_format($totals['shipping_minor']/100,0) }}</bdi> ر.س</dd></div>
+                <div><dt>الضريبة الحالية</dt><dd><bdi>{{ number_format($totals['tax_minor']/100,0) }}</bdi> ر.س</dd></div>
                 <div class="grand-total"><dt>الإجمالي</dt><dd data-testid="checkout-total"><bdi>{{ number_format($totals['total_minor']/100,0) }}</bdi> ر.س</dd></div>
             </dl>
-            <p class="s06-policy-code">سياسة الضريبة التطويرية: <bdi dir="ltr">{{ $totals['tax_policy_code'] }}</bdi></p>
-            <button class="button button-primary checkout-submit" type="submit" data-testid="confirm-checkout">تأكيد Checkout وإنشاء الطلب</button>
-            <p class="s06-boundary-note">لن يحجز هذا الإجراء المخزون، ولن يثبت الدفع أو الشحن. تُحفظ الحقائق المستخدمة في الطلب كلقطات تاريخية.</p>
+            <p class="s06-policy-code">لا تُضاف ضريبة نهائية في التجربة الحالية؛ ستعتمد الضريبة النهائية على السياسة المعتمدة عند التفعيل.</p>
+            <button class="button button-primary checkout-submit" type="submit" data-testid="confirm-checkout">تأكيد الطلب</button>
+            <p class="s06-boundary-note">لن يحجز هذا التأكيد المخزون، ولن يثبت الدفع أو حجز الشحنة. سنحتفظ بتفاصيل الطلب كما ظهرت لك عند التأكيد.</p>
         </aside>
     </form>
 </section>

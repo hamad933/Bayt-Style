@@ -3,6 +3,17 @@ import { test, expect } from '@playwright/test';
 
 fs.mkdirSync('storage/test-artifacts/visual', { recursive: true });
 
+const forbiddenCustomerTerms = [
+    'S06', 'S07', 'workstream', 'Variant', 'Checkout', 'SLA',
+    'demo_unconfigured_zero', 'manual_pending_demo', 'rp01-s06-development-consent-v1',
+    'pending_payment', 'not_reserved', 'not_started',
+];
+
+async function expectCustomerCopyClean(page) {
+    const visibleText = await page.locator('body').innerText();
+    for (const term of forbiddenCustomerTerms) expect(visibleText).not.toContain(term);
+}
+
 async function chooseSandChair(page, quantity = 1) {
     await page.goto('/products/olive-velvet-lounge-chair');
     const colorSand = page.locator('[data-option-key="color"][data-option-value="رملي"]');
@@ -66,6 +77,7 @@ test('S01 → S06 critical customer flow preserves exact Variant and pending bou
     await expect(page).toHaveURL(/\/cart$/);
     await expect(page.getByTestId('cart-line')).toContainText('BAS-CHAIR-SAND-01');
     await expect(page.getByTestId('cart-subtotal')).toContainText('4,100');
+    await expectCustomerCopyClean(page);
     const quantity = page.locator('input[name="quantity"]');
     await quantity.fill('3');
     await page.getByRole('button', { name: 'تحديث' }).click();
@@ -75,17 +87,18 @@ test('S01 → S06 critical customer flow preserves exact Variant and pending bou
     await expect(page).toHaveURL(/\/checkout$/);
     await expect(page.getByTestId('checkout-page')).toContainText('BAS-CHAIR-SAND-01');
     await expect(page.getByTestId('checkout-total')).toContainText('6,185');
-    await expect(page.getByText('مسار يدوي تجريبي — قيد الانتظار')).toBeVisible();
-    await expect(page.getByText('demo_unconfigured_zero')).toBeVisible();
+    await expect(page.getByText('الدفع غير مكتمل بعد')).toBeVisible();
+    await expectCustomerCopyClean(page);
     await fillCheckout(page);
     await page.getByTestId('confirm-checkout').click();
     await expect(page).toHaveURL(/\/checkout\/confirmation\//);
     await expect(page.getByTestId('order-reference')).toContainText('BAS-');
-    await expect(page.getByTestId('payment-state')).toHaveText('pending');
-    await expect(page.getByTestId('reservation-state')).toHaveText('not_reserved');
+    await expect(page.getByTestId('payment-state')).toHaveText('الدفع لم يكتمل بعد');
+    await expect(page.getByTestId('reservation-state')).toHaveText('المخزون غير محجوز حتى الآن');
     await expect(page.getByTestId('confirmation-total')).toContainText('6,185');
     await expect(page.getByText('تم الدفع بنجاح')).toHaveCount(0);
     await expect(page.getByText('تم حجز المخزون')).toHaveCount(0);
+    await expectCustomerCopyClean(page);
 });
 
 test('S05 wishlist and comparison remain functional after S06 integration', async ({ page }) => {
@@ -138,19 +151,22 @@ for (const viewport of [
         await chooseSandChair(page, 1);
         await page.goto('/cart');
         await expect(page.getByTestId('cart-page')).toBeVisible();
+        await expectCustomerCopyClean(page);
         let hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
         expect(hasOverflow, `s06-cart must not overflow at ${viewport.width}px`).toBe(false);
         await page.screenshot({ path: `storage/test-artifacts/visual/s06-cart-${viewport.name}.png`, fullPage: true });
         await page.getByTestId('proceed-checkout').click();
         await expect(page.getByTestId('checkout-page')).toBeVisible();
+        await expectCustomerCopyClean(page);
         await fillCheckout(page);
         hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
         expect(hasOverflow, `s06-checkout must not overflow at ${viewport.width}px`).toBe(false);
         await page.screenshot({ path: `storage/test-artifacts/visual/s06-checkout-${viewport.name}.png`, fullPage: true });
         await page.getByTestId('confirm-checkout').click();
         await expect(page.getByTestId('confirmation-page')).toBeVisible();
-        await expect(page.getByTestId('payment-state')).toHaveText('pending');
-        await expect(page.getByTestId('reservation-state')).toHaveText('not_reserved');
+        await expect(page.getByTestId('payment-state')).toHaveText('الدفع لم يكتمل بعد');
+        await expect(page.getByTestId('reservation-state')).toHaveText('المخزون غير محجوز حتى الآن');
+        await expectCustomerCopyClean(page);
         hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
         expect(hasOverflow, `s06-confirmation must not overflow at ${viewport.width}px`).toBe(false);
         await page.screenshot({ path: `storage/test-artifacts/visual/s06-confirmation-${viewport.name}.png`, fullPage: true });

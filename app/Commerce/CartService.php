@@ -76,16 +76,22 @@ class CartService
         $prices = $request->session()->get('cart_prices', []);
         $prices[$variant->id] = number_format((float) $variant->price, 2, '.', '');
         $request->session()->put('cart_prices', $prices);
+        $this->invalidateCheckout($request);
     }
     public function forget(Request $request, int $variantId): void
     {
         $prices = $request->session()->get('cart_prices', []);
         unset($prices[$variantId]);
         $request->session()->put('cart_prices', $prices);
+        $this->invalidateCheckout($request);
+    }
+    public function invalidateCheckout(Request $request): void
+    {
+        $request->session()->forget('checkout_token');
     }
     public function clear(Request $request): void
     {
-        $request->session()->forget(['cart', 'cart_prices', 'checkout_token']);
+        $request->session()->forget(['cart', 'cart_prices']);
     }
     private function toMinor(string $amount): int
     {

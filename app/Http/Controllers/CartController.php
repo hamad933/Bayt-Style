@@ -43,6 +43,7 @@ class CartController extends Controller
         abort_unless(array_key_exists($variant->id, $cart), 404);
         $cart[$variant->id] = (int) $validated['quantity'];
         $request->session()->put('cart', $cart);
+        $this->cart->invalidateCheckout($request);
         if ($request->expectsJson()) return response()->json($this->cart->snapshot($request));
         return redirect()->route('cart.index')->with('status','تم تحديث الكمية.');
     }

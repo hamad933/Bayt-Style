@@ -88,7 +88,7 @@
             <div x-show="$store.cart.items.length">
                 <a class="button button-primary" href="{{ route('cart.index') }}" @click="$store.cart.closeDrawer()">عرض السلة وإتمام الطلب</a>
             </div>
-            <p class="drawer-boundary">إضافة المنتجات إلى السلة لا تنشئ طلبًا ولا تحجز المخزون. يتم التحقق من السعر والتوفر قبل Checkout.</p>
+            <p class="drawer-boundary">إضافة المنتجات إلى السلة لا تنشئ طلبًا ولا تحجز المخزون. نتحقق من السعر والتوفر مرة أخرى قبل إتمام الطلب.</p>
         </aside>
     </div>
 </header>

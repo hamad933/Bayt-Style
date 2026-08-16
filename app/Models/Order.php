@@ -19,5 +19,6 @@ class Order extends Model
         ];
     }
     public function lines(): HasMany { return $this->hasMany(OrderLine::class); }
+    public function events(): HasMany { return $this->hasMany(OrderEvent::class); }
     public function getRouteKeyName(): string { return 'order_number'; }
 }
