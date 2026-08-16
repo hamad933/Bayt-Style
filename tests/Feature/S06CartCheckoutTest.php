@@ -28,7 +28,7 @@ class S06CartCheckoutTest extends TestCase
         $variant = Variant::where('sku', 'BAS-CHAIR-SAND-01')->firstOrFail();
         $this->postJson('/cart/items', ['variant_id' => $variant->id, 'quantity' => 2])->assertCreated();
         $this->get('/cart')->assertOk()->assertSee('كرسي استرخاء مخملي')->assertSee('BAS-CHAIR-SAND-01')
-            ->assertSee('مخمل رملي')->assertSee('4,100')->assertSessionHas('cart.'.$variant->id, 2);
+            ->assertSee('رملي · جوزي داكن')->assertSee('4,100')->assertSessionHas('cart.'.$variant->id, 2);
     }
 
     public function test_quantity_update_and_remove_preserve_session_semantics_without_inventory_mutation(): void

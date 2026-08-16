@@ -27,8 +27,14 @@ jobs:
       QUEUE_CONNECTION: sync
 
     steps:
-      - name: Check out proposal
+      - name: Check out exact proposal HEAD
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact proposal HEAD
+        if: github.event_name == 'pull_request'
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
 
       - name: Set up PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -83,6 +89,11 @@ jobs:
 
       - name: Reset demo data for browser verification
         run: php artisan migrate:fresh --seed --force
+
+      - name: Record exact evidence HEAD
+        run: |
+          mkdir -p storage/test-artifacts
+          git rev-parse HEAD > storage/test-artifacts/exact-head.txt
 
       - name: Install Chromium for the single browser verification layer
         run: npx playwright install --with-deps chromium
