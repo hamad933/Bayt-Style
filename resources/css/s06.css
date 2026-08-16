@@ -20,10 +20,12 @@
 .s06-line h2{margin:0 0 6px;font-size:1.28rem}.s06-line p{margin:0;color:#69645b}
 .s06-sku{font-size:.78rem;letter-spacing:.06em;margin-top:6px!important}
 .s06-line-pricing{display:flex;gap:28px;margin:0}.s06-line-pricing div{display:grid;gap:3px}
-.s06-line-pricing dt{font-size:.78rem;color:#777168}.s06-line-pricing dd{margin:0;font-weight:700}
+.s06-line-pricing dt{font-size:.78rem;color:#777168}.s06-line-pricing dd{margin:0;font-weight:700;white-space:nowrap}
 .s06-line-actions{display:flex;justify-content:space-between;gap:18px;align-items:end;flex-wrap:wrap}
 .s06-line-actions form{display:flex;align-items:center;gap:10px}.s06-line-actions label{font-size:.85rem}
 .s06-line-actions input{width:68px;padding:9px;border:1px solid #bbb2a6;background:#fff;font:inherit}
+.s06-line-actions .text-action{color:#596149;border:1px solid #bdb2a2;background:transparent;padding:7px 12px}
+.s06-line-actions .text-action:hover{background:#ebe5da}
 .s06-remove{border:0;background:transparent;color:#8a4f3e;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
 .s06-inline-warning{color:#8a4f3e!important;font-weight:700;font-size:.9rem}
 .s06-summary,.checkout-summary{position:sticky;top:100px;background:#f6f1e8;border:1px solid #d8cdbd;padding:28px}
@@ -31,6 +33,7 @@
 .s06-summary dl,.checkout-totals{display:grid;gap:14px;margin:0}
 .s06-summary dl div,.checkout-totals div{display:flex;justify-content:space-between;gap:20px;align-items:start}
 .s06-summary dt,.checkout-totals dt{color:#69645b}.s06-summary dd,.checkout-totals dd{margin:0;text-align:left}
+.s06-summary dd[data-testid="cart-subtotal"],.s06-total-preview strong,.grand-total dd,.checkout-item>bdi,.confirmation-line>bdi{white-space:nowrap}
 .s06-total-preview,.grand-total{margin-top:20px!important;padding-top:18px;border-top:1px solid #bdb2a2;display:flex;justify-content:space-between;gap:20px}
 .s06-total-preview strong,.grand-total dd{font-size:1.35rem;font-weight:800}
 .s06-boundary-note{font-size:.82rem;line-height:1.75;color:#6d675d;margin:18px 0}
@@ -64,6 +67,8 @@
 .confirmation-summary{background:#f6f1e8;padding:28px}.confirmation-line{padding:14px 0;border-bottom:1px solid #ddd4c7}
 .confirmation-summary .checkout-totals{margin-top:20px}
 .confirmation-next{border-top:1px solid #d7cec1;padding-top:36px;max-width:700px}.confirmation-next p{line-height:1.8;color:#666258}
+.skip-link{opacity:0;pointer-events:none}
+.skip-link:focus{opacity:1;pointer-events:auto}
 @media(max-width:900px){
   .s06-cart-grid,.checkout-form,.confirmation-grid{grid-template-columns:1fr}
   .s06-summary,.checkout-summary{position:static}
