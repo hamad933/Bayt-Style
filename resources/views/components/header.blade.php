@@ -5,7 +5,6 @@
             <span class="brand-ar">بيت وأسلوب</span>
             <span class="brand-en" dir="ltr">Bayt & Style</span>
         </a>
-
         <nav class="desktop-nav" aria-label="التنقل الرئيسي">
             <a href="{{ route('catalog') }}?category=seating">المجموعات</a>
             <a href="{{ route('catalog') }}?room={{ urlencode('المعيشة') }}">الغرف</a>
@@ -13,26 +12,21 @@
             <a href="{{ route('home') }}#seasonal">الإلهام</a>
             <a href="#customer-service">خدمات العملاء</a>
         </nav>
-
         <form class="header-search" action="{{ route('catalog') }}" method="get" role="search">
             <label class="sr-only" for="header-search">ابحث في المنتجات</label>
             <input id="header-search" type="search" name="q" value="{{ request('q') }}" placeholder="ابحث في المنتجات">
             <button type="submit" aria-label="بحث">⌕</button>
         </form>
-
         <div class="header-actions">
             <a class="commerce-link" href="{{ route('wishlist.index') }}" aria-label="المفضلة">
-                <span aria-hidden="true">♡</span>
-                <span class="commerce-count" x-text="$store.wishlist.count">{{ count(array_unique(array_map('intval', session('wishlist', [])))) }}</span>
+                <span aria-hidden="true">♡</span><span class="commerce-count" x-text="$store.wishlist.count">{{ count(array_unique(array_map('intval', session('wishlist', [])))) }}</span>
             </a>
             <a class="commerce-link" href="{{ route('comparison.index') }}" aria-label="المقارنة">
-                <span aria-hidden="true">≍</span>
-                <span class="commerce-count" x-text="$store.comparison.count">{{ count(array_unique(array_map('intval', session('comparison', [])))) }}</span>
+                <span aria-hidden="true">≍</span><span class="commerce-count" x-text="$store.comparison.count">{{ count(array_unique(array_map('intval', session('comparison', [])))) }}</span>
             </a>
             <button class="text-action desktop-only" type="button" @click="loginOpen = true" :aria-expanded="loginOpen.toString()" aria-controls="login-dialog">تسجيل الدخول</button>
             <button class="icon-action" type="button" @click="$store.cart.openDrawer()" :aria-expanded="$store.cart.open.toString()" aria-controls="cart-drawer" aria-label="فتح السلة">
-                <span aria-hidden="true">◯</span>
-                <span class="cart-badge" x-text="$store.cart.count">{{ $cartCount }}</span>
+                <span aria-hidden="true">◯</span><span class="cart-badge" x-text="$store.cart.count">{{ $cartCount }}</span>
             </button>
             <button class="menu-toggle" type="button" @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen.toString()" aria-controls="mobile-nav" aria-label="فتح القائمة">☰</button>
         </div>
@@ -45,6 +39,7 @@
             <a href="{{ route('catalog') }}?room={{ urlencode('المعيشة') }}">الغرف</a>
             <a href="{{ route('wishlist.index') }}">المفضلة <span x-text="'(' + $store.wishlist.count + ')' "></span></a>
             <a href="{{ route('comparison.index') }}">المقارنة <span x-text="'(' + $store.comparison.count + ')' "></span></a>
+            <a href="{{ route('cart.index') }}">السلة <span x-text="'(' + $store.cart.count + ')' "></span></a>
             <a href="{{ route('home') }}#seasonal">الإلهام</a>
             <a href="#customer-service">خدمات العملاء</a>
             <button type="button" @click="mobileOpen = false; loginOpen = true">تسجيل الدخول</button>
@@ -54,8 +49,7 @@
     <div class="dialog-backdrop" x-show="loginOpen" x-transition.opacity x-cloak @click.self="loginOpen = false">
         <section id="login-dialog" class="dialog-panel" role="dialog" aria-modal="true" aria-labelledby="login-title" x-ref="loginDialog" @keydown.tab="trapFocus($event, $refs.loginDialog)">
             <button class="dialog-close" type="button" @click="loginOpen = false" aria-label="إغلاق">×</button>
-            <p class="eyebrow">الحساب</p>
-            <h2 id="login-title">تسجيل الدخول</h2>
+            <p class="eyebrow">الحساب</p><h2 id="login-title">تسجيل الدخول</h2>
             <p>تسجيل الدخول غير متاح حاليًا. يمكنك متابعة استكشاف المنتجات وإدارة السلة والمفضلة كزائر.</p>
             <button class="button button-ghost" type="button" @click="loginOpen = false">متابعة كزائر</button>
         </section>
@@ -64,16 +58,11 @@
     <div class="drawer-backdrop" x-show="$store.cart.open" x-transition.opacity x-cloak @click.self="$store.cart.closeDrawer()">
         <aside id="cart-drawer" class="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" x-ref="cartDrawer" @keydown.tab="$store.cart.trapFocus($event, $el)">
             <div class="drawer-head">
-                <div>
-                    <p class="eyebrow">السلة</p>
-                    <h2 id="cart-title">مختاراتك الحالية</h2>
-                </div>
+                <div><p class="eyebrow">السلة</p><h2 id="cart-title">مختاراتك الحالية</h2></div>
                 <button type="button" @click="$store.cart.closeDrawer()" aria-label="إغلاق السلة">×</button>
             </div>
             <template x-if="$store.cart.loading"><p class="muted">جارٍ تحديث السلة…</p></template>
-            <template x-if="!$store.cart.loading && $store.cart.items.length === 0">
-                <p class="empty-note">لم تضف أي قطعة بعد.</p>
-            </template>
+            <template x-if="!$store.cart.loading && $store.cart.items.length === 0"><p class="empty-note">لم تضف أي قطعة بعد.</p></template>
             <div class="cart-lines" x-show="$store.cart.items.length">
                 <template x-for="item in $store.cart.items" :key="item.variant_id">
                     <article class="cart-line">
@@ -94,10 +83,12 @@
                 </template>
             </div>
             <div class="cart-total" x-show="$store.cart.items.length">
-                <span>المجموع الحالي</span>
-                <strong><bdi x-text="$store.cart.total"></bdi> ر.س</strong>
+                <span>المجموع الحالي</span><strong><bdi x-text="$store.cart.total"></bdi> ر.س</strong>
             </div>
-            <p class="drawer-boundary">إضافة المنتجات إلى السلة لا تنشئ طلبًا ولا تحجز المخزون. إتمام الشراء غير متاح حاليًا.</p>
+            <div x-show="$store.cart.items.length">
+                <a class="button button-primary" href="{{ route('cart.index') }}" @click="$store.cart.closeDrawer()">عرض السلة وإتمام الطلب</a>
+            </div>
+            <p class="drawer-boundary">إضافة المنتجات إلى السلة لا تنشئ طلبًا ولا تحجز المخزون. يتم التحقق من السعر والتوفر قبل Checkout.</p>
         </aside>
     </div>
 </header>

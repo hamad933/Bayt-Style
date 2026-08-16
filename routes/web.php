@@ -1,7 +1,7 @@
 <?php
-
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ComparisonController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
@@ -21,7 +21,13 @@ Route::post('/comparison/{product}', [ComparisonController::class, 'store'])->na
 Route::delete('/comparison/{product}', [ComparisonController::class, 'destroy'])->name('comparison.destroy');
 Route::delete('/comparison', [ComparisonController::class, 'clear'])->name('comparison.clear');
 
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
 Route::post('/cart/items', [CartController::class, 'store'])->name('cart.store');
 Route::patch('/cart/items/{variant}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/items/{variant}', [CartController::class, 'destroy'])->name('cart.destroy');
+
+Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/checkout/confirmation/{order:order_number}', [CheckoutController::class, 'confirmation'])
+    ->name('checkout.confirmation');

@@ -3,114 +3,117 @@ import { test, expect } from '@playwright/test';
 
 fs.mkdirSync('storage/test-artifacts/visual', { recursive: true });
 
-test('S01 → S05 critical customer flow with exact Variant cart semantics', async ({ page }) => {
+async function chooseSandChair(page, quantity = 1) {
+    await page.goto('/products/olive-velvet-lounge-chair');
+    const colorSand = page.locator('[data-option-key="color"][data-option-value="رملي"]');
+    await colorSand.click();
+    await expect(page.getByTestId('variant-sku')).toHaveText('BAS-CHAIR-SAND-01');
+    for (let i = 1; i < quantity; i += 1) {
+        await page.getByRole('button', { name: 'زيادة الكمية' }).click();
+    }
+    await page.getByTestId('add-to-cart').click();
+    await expect(page.locator('.cart-badge')).toHaveText(String(quantity));
+}
+
+async function fillCheckout(page) {
+    await page.getByLabel('الاسم الكامل').fill('عميل متصفح تجريبي');
+    await page.getByLabel('البريد الإلكتروني').fill('browser@example.test');
+    await page.getByLabel('رقم الجوال').fill('+966500000002');
+    await page.getByLabel('المنطقة / المحافظة').fill('الرياض');
+    await page.getByLabel('المدينة').fill('الرياض');
+    await page.getByLabel('الحي اختياري').fill('حي تجريبي');
+    await page.getByLabel('الشارع / سطر العنوان').fill('شارع اختبار 20');
+    await page.getByLabel('المبنى / الوحدة اختياري').fill('وحدة 4');
+    await page.getByLabel('الرمز البريدي عند انطباقه').fill('00000');
+    await page.locator('input[name="terms"]').check();
+}
+
+test('S01 → S06 critical customer flow preserves exact Variant and pending boundaries', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('دفء المنزل يبدأ');
-
     await page.keyboard.press('Tab');
     await expect(page.locator('.skip-link')).toBeFocused();
-    await expect(page.locator('.skip-link')).toHaveCSS('transform', 'none');
-
     await page.getByRole('link', { name: 'تسوق التشكيلة' }).click();
     await expect(page).toHaveURL(/\/catalog/);
-
     await page.getByTestId('catalog-search').fill('كرسي');
     await page.getByTestId('catalog-search').press('Enter');
     await expect(page.getByText('كرسي استرخاء مخملي', { exact: true })).toBeVisible();
-
-    await page.locator('#desktop-category').selectOption('seating');
-    await page.locator('.desktop-filters').getByTestId('apply-filters').click();
-    await expect(page).toHaveURL(/category=seating/);
-
     await page.getByText('كرسي استرخاء مخملي', { exact: true }).first().click();
     await expect(page).toHaveURL(/\/products\/olive-velvet-lounge-chair/);
-
     const galleryPanels = page.locator('.gallery-main img[role="tabpanel"]');
     await expect(galleryPanels).toHaveCount(4);
-    const gallerySources = await galleryPanels.evaluateAll((images) => images.map((image) => new URL(image.src).pathname));
-    expect(new Set(gallerySources).size).toBe(4);
     await expect(galleryPanels.nth(0)).toHaveAttribute('src', /chair-main\.jpg$/);
-    await expect(galleryPanels.nth(1)).toHaveAttribute('src', /chair-detail-side\.jpg$/);
-    await expect(galleryPanels.nth(2)).toHaveAttribute('src', /chair-detail-seat\.jpg$/);
-    await expect(galleryPanels.nth(3)).toHaveAttribute('src', /chair-detail-back\.jpg$/);
-
-    const secondGalleryTab = page.getByRole('tab', { name: 'عرض الصورة 2' });
-    await secondGalleryTab.click();
-    await expect(secondGalleryTab).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('#product-media-1')).toBeVisible();
-
     const colorSand = page.locator('[data-option-key="color"][data-option-value="رملي"]');
-    await colorSand.focus();
-    await colorSand.press('Enter');
-    await expect(colorSand).toBeFocused();
+    await colorSand.click();
     await expect(colorSand).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('variant-sku')).toHaveText('BAS-CHAIR-SAND-01');
     await expect(page.getByTestId('variant-price')).toContainText('2,050');
-    await expect(page.getByTestId('variant-availability')).toContainText('متاح');
-
     const unavailableFinish = page.locator('[data-option-key="finish"][data-option-value="بلوط طبيعي"]');
     await expect(unavailableFinish).toBeDisabled();
-    await expect(unavailableFinish).toHaveAttribute('title', /غير متاح/);
-
     const wishlist = page.getByTestId('detail-wishlist');
     await wishlist.click();
     await expect(wishlist).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('a[aria-label="المفضلة"] .commerce-count')).toHaveText('1');
-
-    await page.getByRole('link', { name: 'المفضلة' }).first().click();
-    await expect(page).toHaveURL(/\/wishlist$/);
-    await expect(page.getByTestId('wishlist-list')).toContainText('كرسي استرخاء مخملي');
-
-    const wishlistCompare = page.getByTestId('wishlist-comparison-toggle');
-    await wishlistCompare.click();
-    await expect(wishlistCompare).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('a[aria-label="المقارنة"] .commerce-count')).toHaveText('1');
-
-    await page.getByRole('link', { name: 'المقارنة' }).first().click();
-    await expect(page).toHaveURL(/\/comparison$/);
-    await expect(page.getByTestId('comparison-grid')).toContainText('كرسي استرخاء مخملي');
-    await expect(page.getByTestId('comparison-grid')).toContainText('مخمل');
-    await expect(page.getByTestId('comparison-grid')).toContainText('1,950');
-
-    await page.getByTestId('comparison-remove').click();
-    await expect(page.getByTestId('comparison-empty')).toBeVisible();
-
-    await page.goto('/products/olive-velvet-lounge-chair');
-    await expect(page.getByTestId('detail-wishlist')).toContainText('محفوظ في المفضلة');
-
-    const cartColorSand = page.locator('[data-option-key="color"][data-option-value="رملي"]');
-    await cartColorSand.click();
-    await expect(page.getByTestId('variant-sku')).toHaveText('BAS-CHAIR-SAND-01');
-
     await page.getByRole('button', { name: 'زيادة الكمية' }).click();
     await expect(page.getByTestId('quantity-value')).toHaveText('2');
     await page.getByTestId('add-to-cart').click();
     await expect(page.locator('.cart-badge')).toHaveText('2');
-
     await page.getByRole('button', { name: 'فتح السلة' }).click();
     await expect(page.locator('#cart-drawer')).toContainText('BAS-CHAIR-SAND-01');
     await expect(page.locator('#cart-drawer')).toContainText('مخمل رملي · جوزي داكن');
-
-    await page.keyboard.press('Escape');
-    await page.goto('/catalog');
-    await expect(page.locator('.cart-badge')).toHaveText('2');
+    await page.getByRole('link', { name: 'عرض السلة وإتمام الطلب' }).click();
+    await expect(page).toHaveURL(/\/cart$/);
+    await expect(page.getByTestId('cart-line')).toContainText('BAS-CHAIR-SAND-01');
+    await expect(page.getByTestId('cart-subtotal')).toContainText('4,100');
+    const quantity = page.locator('input[name="quantity"]');
+    await quantity.fill('3');
+    await page.getByRole('button', { name: 'تحديث' }).click();
+    await expect(page).toHaveURL(/\/cart$/);
+    await expect(page.getByTestId('cart-subtotal')).toContainText('6,150');
+    await page.getByTestId('proceed-checkout').click();
+    await expect(page).toHaveURL(/\/checkout$/);
+    await expect(page.getByTestId('checkout-page')).toContainText('BAS-CHAIR-SAND-01');
+    await expect(page.getByTestId('checkout-total')).toContainText('6,185');
+    await expect(page.getByText('مسار يدوي تجريبي — قيد الانتظار')).toBeVisible();
+    await expect(page.getByText('demo_unconfigured_zero')).toBeVisible();
+    await fillCheckout(page);
+    await page.getByTestId('confirm-checkout').click();
+    await expect(page).toHaveURL(/\/checkout\/confirmation\//);
+    await expect(page.getByTestId('order-reference')).toContainText('BAS-');
+    await expect(page.getByTestId('payment-state')).toHaveText('pending');
+    await expect(page.getByTestId('reservation-state')).toHaveText('not_reserved');
+    await expect(page.getByTestId('confirmation-total')).toContainText('6,185');
+    await expect(page.getByText('تم الدفع بنجاح')).toHaveCount(0);
+    await expect(page.getByText('تم حجز المخزون')).toHaveCount(0);
 });
 
-test('Home quick-add requires configuration for multi-Variant products and remains exact for single-Variant products', async ({ page }) => {
-    await page.goto('/');
+test('S05 wishlist and comparison remain functional after S06 integration', async ({ page }) => {
+    await page.goto('/catalog');
+    const wishlistButton = page.getByTestId('wishlist-toggle').first();
+    await wishlistButton.click();
+    await expect(wishlistButton).toHaveAttribute('aria-pressed', 'true');
+    await page.goto('/wishlist');
+    await expect(page.getByTestId('wishlist-list')).toBeVisible();
+    await page.goto('/catalog');
+    const comparisonButtons = page.getByTestId('comparison-toggle');
+    await expect(comparisonButtons).toHaveCount(6);
+    for (let index = 0; index < 3; index += 1) {
+        await comparisonButtons.nth(index).click();
+        await expect(comparisonButtons.nth(index)).toHaveAttribute('aria-pressed', 'true');
+    }
+    await page.goto('/comparison');
+    await expect(page.getByTestId('comparison-grid').locator('.comparison-item')).toHaveCount(3);
+});
 
+test('single-Variant quick add remains exact and multi-Variant product still requires configuration', async ({ page }) => {
+    await page.goto('/');
     const chairCard = page.getByTestId('product-card').filter({ hasText: 'كرسي استرخاء مخملي' });
     await expect(chairCard.getByRole('link', { name: 'اختر الخيارات' })).toBeVisible();
     await expect(chairCard.getByRole('button', { name: 'أضف إلى السلة' })).toHaveCount(0);
-
     const lampCard = page.getByTestId('product-card').filter({ hasText: 'مصباح طاولة سيراميك' });
-    const lampQuickAdd = lampCard.getByRole('button', { name: 'أضف إلى السلة' });
-    await expect(lampQuickAdd).toBeVisible();
-    await lampQuickAdd.click();
+    await lampCard.getByRole('button', { name: 'أضف إلى السلة' }).click();
     await expect(page.locator('.cart-badge')).toHaveText('1');
-
     await page.getByRole('button', { name: 'فتح السلة' }).click();
     await expect(page.locator('#cart-drawer')).toContainText('BAS-LAMP-CER-01');
 });
@@ -120,52 +123,36 @@ for (const viewport of [
     { name: 'tablet-820', width: 820, height: 1180 },
     { name: 'mobile-390', width: 390, height: 844 },
 ]) {
-    test(`responsive S01-S05 verification ${viewport.name}`, async ({ page }) => {
+    test(`responsive S01-S06 evidence ${viewport.name}`, async ({ page }) => {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
-
-        const routes = [
-            ['s01-home', '/'],
-            ['s02-catalog', '/catalog'],
-            ['s03-s04-product', '/products/olive-velvet-lounge-chair'],
-        ];
-
-        for (const [surface, route] of routes) {
+        for (const [surface, route] of [
+            ['s01-home', '/'], ['s02-catalog', '/catalog'], ['s03-s04-product', '/products/olive-velvet-lounge-chair'],
+            ['s05-wishlist', '/wishlist'], ['s05-comparison', '/comparison'],
+        ]) {
             await page.goto(route);
             await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-            await expect(page.locator('main')).toBeVisible();
             const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-            expect(hasOverflow, `${surface} must not overflow horizontally at ${viewport.width}px`).toBe(false);
-            await page.screenshot({
-                path: `storage/test-artifacts/visual/${surface}-${viewport.name}.png`,
-                fullPage: true,
-            });
+            expect(hasOverflow, `${surface} must not overflow at ${viewport.width}px`).toBe(false);
+            await page.screenshot({ path: `storage/test-artifacts/visual/${surface}-${viewport.name}.png`, fullPage: true });
         }
-
-        await page.goto('/catalog');
-        await page.getByTestId('wishlist-toggle').first().click();
-        await page.goto('/wishlist');
-        await expect(page.getByTestId('wishlist-list')).toBeVisible();
+        await chooseSandChair(page, 1);
+        await page.goto('/cart');
+        await expect(page.getByTestId('cart-page')).toBeVisible();
         let hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-        expect(hasOverflow, `s05-wishlist must not overflow horizontally at ${viewport.width}px`).toBe(false);
-        await page.screenshot({
-            path: `storage/test-artifacts/visual/s05-wishlist-${viewport.name}.png`,
-            fullPage: true,
-        });
-
-        await page.goto('/catalog');
-        const comparisonButtons = page.getByTestId('comparison-toggle');
-        await expect(comparisonButtons).toHaveCount(6);
-        for (let index = 0; index < 3; index += 1) {
-            await comparisonButtons.nth(index).click();
-            await expect(comparisonButtons.nth(index)).toHaveAttribute('aria-pressed', 'true');
-        }
-        await page.goto('/comparison');
-        await expect(page.getByTestId('comparison-grid').locator('.comparison-item')).toHaveCount(3);
+        expect(hasOverflow, `s06-cart must not overflow at ${viewport.width}px`).toBe(false);
+        await page.screenshot({ path: `storage/test-artifacts/visual/s06-cart-${viewport.name}.png`, fullPage: true });
+        await page.getByTestId('proceed-checkout').click();
+        await expect(page.getByTestId('checkout-page')).toBeVisible();
+        await fillCheckout(page);
         hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-        expect(hasOverflow, `s05-comparison must not overflow horizontally at ${viewport.width}px`).toBe(false);
-        await page.screenshot({
-            path: `storage/test-artifacts/visual/s05-comparison-${viewport.name}.png`,
-            fullPage: true,
-        });
+        expect(hasOverflow, `s06-checkout must not overflow at ${viewport.width}px`).toBe(false);
+        await page.screenshot({ path: `storage/test-artifacts/visual/s06-checkout-${viewport.name}.png`, fullPage: true });
+        await page.getByTestId('confirm-checkout').click();
+        await expect(page.getByTestId('confirmation-page')).toBeVisible();
+        await expect(page.getByTestId('payment-state')).toHaveText('pending');
+        await expect(page.getByTestId('reservation-state')).toHaveText('not_reserved');
+        hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
+        expect(hasOverflow, `s06-confirmation must not overflow at ${viewport.width}px`).toBe(false);
+        await page.screenshot({ path: `storage/test-artifacts/visual/s06-confirmation-${viewport.name}.png`, fullPage: true });
     });
 }

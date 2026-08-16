@@ -1,18 +1,16 @@
 <?php
-
 namespace App\Providers;
-
+use App\Commerce\Shipping\DevelopmentShippingMethodProvider;
+use App\Commerce\Shipping\ShippingMethodProvider;
+use App\Commerce\Tax\DevelopmentTaxCalculator;
+use App\Commerce\Tax\TaxCalculator;
 use Illuminate\Support\ServiceProvider;
-
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // No additional service abstractions are required for S01-S03.
+        $this->app->bind(ShippingMethodProvider::class, DevelopmentShippingMethodProvider::class);
+        $this->app->bind(TaxCalculator::class, DevelopmentTaxCalculator::class);
     }
-
-    public function boot(): void
-    {
-        //
-    }
+    public function boot(): void {}
 }
