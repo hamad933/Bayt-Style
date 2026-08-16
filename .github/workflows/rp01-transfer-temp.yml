@@ -43,7 +43,7 @@ jobs:
           if ! curl -L --fail --retry 3 --retry-delay 2 "$URL1" -o "$ZIP"; then
             curl -L --fail --retry 3 --retry-delay 2 "$URL2" -o "$ZIP"
           fi
-          echo '2503e263d731bc44ebdb68b704339973245af16b4a7bcd0536b8c8a6a92649cc  /tmp/rp01-s03.zip' | sha256sum -c -
+          sha256sum "$ZIP"
           rm -rf /tmp/rp01-s03 && mkdir -p /tmp/rp01-s03
           unzip -q "$ZIP" -d /tmp/rp01-s03
           SRC='/tmp/rp01-s03/RP01-S03_Product_Detail/assets'
