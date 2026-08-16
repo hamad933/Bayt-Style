@@ -21,7 +21,7 @@ jobs:
           ref: tmp-test-ignore
           fetch-depth: 0
 
-      - name: Reconstruct approved locks and accepted S03 bytes
+      - name: Reconstruct approved locks and exact accepted S03 bytes
         shell: bash
         run: |
           set -euo pipefail
@@ -37,28 +37,23 @@ jobs:
           test "$(git hash-object /tmp/rp01-locks/composer.lock)" = '66df49f1c323b25cccd38552b40882e83edb4270'
           test "$(git hash-object /tmp/rp01-locks/package-lock.json)" = 'a2c6034d8bf184de8cc28508ccb94b124f78a582'
 
-          python3 -m pip install --quiet --user gdown
-          python3 -m gdown 'https://drive.google.com/uc?id=1CsvOvnUtqyTnLIqYHm7SWKMueX6iWd8i' -O /tmp/rp01-s03.zip
-          echo '2503e263d731bc44ebdb68b704339973245af16b4a7bcd0536b8c8a6a92649cc  /tmp/rp01-s03.zip' | sha256sum -c -
-          rm -rf /tmp/rp01-s03 && mkdir -p /tmp/rp01-s03
-          unzip -q /tmp/rp01-s03.zip -d /tmp/rp01-s03
-          SRC='/tmp/rp01-s03/RP01-S03_Product_Detail/assets'
-          echo '9b4d59d3b9f9244e1a7f14cad9f7bc58d54dd43b34d980513199d222f0004901  /tmp/rp01-s03/RP01-S03_Product_Detail/assets/chair-main.jpg' | sha256sum -c -
-          echo '139a13fc55e65f7b339e3ca970c6af0931f8e608414818d8887475e68dae506a  /tmp/rp01-s03/RP01-S03_Product_Detail/assets/chair-detail-side.jpg' | sha256sum -c -
-          echo 'ac1923edbd7f1299ed2648136dc7f568338fa985197731e4ddd620dd6c9bcccd  /tmp/rp01-s03/RP01-S03_Product_Detail/assets/chair-detail-seat.jpg' | sha256sum -c -
-          echo 'f32dabf7c717c2921a35519fbbc2e5927365c5cb686ef5cf5b484cffe733e768  /tmp/rp01-s03/RP01-S03_Product_Detail/assets/chair-detail-back.jpg' | sha256sum -c -
-          test "$(git hash-object "$SRC/chair-main.jpg")" = '5a3b627a9f01129672d1038ac53dee1d113fcee4'
-          test "$(git hash-object "$SRC/chair-detail-side.jpg")" = '3f12b612ef4bbd75dfa988df68164ceaf01b1243'
-          test "$(git hash-object "$SRC/chair-detail-seat.jpg")" = '62caaafb36015f2c84c1e9d1539c2556e645aabc'
-          test "$(git hash-object "$SRC/chair-detail-back.jpg")" = 'fe8faf6d724c3964a53c3893c20fbac8ac951d15'
+          mkdir -p public/images/products
+          curl -L --fail --retry 2 'https://lh7-rt.googleusercontent.com/slidesz/AGV_vUfMTySq8yBppil-RsjWXSZS-bb0kFhk1RliBwJqNvaC68lMHLyuIMVpdX27rKxauNLiUxJQbVgi1VqbHUaN9RjPrYXayMkZLgGbddttiDMCLoom0S0MehXAmV88IM0F10nWWmQsSevhNgHnSjq4-TOaN89yqK1IMKFi3MvWifhnOOHxAiU3sA=nw?key=OOTkF5H-eHVesVyibUPzHg' -o public/images/products/chair-main.jpg
+          curl -L --fail --retry 2 'https://lh7-rt.googleusercontent.com/slidesz/AGV_vUdKjbc_Q7pRkvsiuKp9lbkYc5NCImQ8iaCZWQFXiRQnfKBlx0LDGL3-w12GZ3_VC00o-fBOLdB8rPbjVZOOuzddpqGxRpYNASPKwjBaiBC5g2-1wclQBvFwqOm52GOfYQ8eF9PRQfp408t069dUu2LorUbpG5vcPjx4RWeCauyh9SbZozKfog=nw?key=OOTkF5H-eHVesVyibUPzHg' -o public/images/products/chair-detail-side.jpg
+          curl -L --fail --retry 2 'https://lh7-rt.googleusercontent.com/slidesz/AGV_vUf4HBsP6DyJ2yOkJOe667HkIFbHtuP_vjL6zSkFLhXXlqVvWTMjqclLsBP3bPESy1k67WMMwFL4oeGTIiK8ZPIGQW6J7IXbQgNST7DfSkNcVp9Rp_nUKqmQU_FAn_NgIoP3iPGjxjcfD7kxx3urC6400d5WnuaYShb4VGX_JQNlAjSmdvUGrw=nw?key=OOTkF5H-eHVesVyibUPzHg' -o public/images/products/chair-detail-seat.jpg
+          curl -L --fail --retry 2 'https://lh7-rt.googleusercontent.com/slidesz/AGV_vUfpLIrXEiZPekZfboKGCvjiwT7hjmm7FVsXKdH34MsYSwG5BIXQ-kuHodlJQKREgbp3eXduKJ8HIFpOCthGKPHj4plIRkdRb895yqeRng3upkv8jhQINpGr32AIM2ujTeXa8VhZFykX-qgbk6Nrzi4bv4_sjYs0VJMNCVGkI3uIbL-iZsJJ6w=nw?key=OOTkF5H-eHVesVyibUPzHg' -o public/images/products/chair-detail-back.jpg
+
+          echo '9b4d59d3b9f9244e1a7f14cad9f7bc58d54dd43b34d980513199d222f0004901  public/images/products/chair-main.jpg' | sha256sum -c -
+          echo '139a13fc55e65f7b339e3ca970c6af0931f8e608414818d8887475e68dae506a  public/images/products/chair-detail-side.jpg' | sha256sum -c -
+          echo 'ac1923edbd7f1299ed2648136dc7f568338fa985197731e4ddd620dd6c9bcccd  public/images/products/chair-detail-seat.jpg' | sha256sum -c -
+          echo 'f32dabf7c717c2921a35519fbbc2e5927365c5cb686ef5cf5b484cffe733e768  public/images/products/chair-detail-back.jpg' | sha256sum -c -
+          test "$(git hash-object public/images/products/chair-main.jpg)" = '5a3b627a9f01129672d1038ac53dee1d113fcee4'
+          test "$(git hash-object public/images/products/chair-detail-side.jpg)" = '3f12b612ef4bbd75dfa988df68164ceaf01b1243'
+          test "$(git hash-object public/images/products/chair-detail-seat.jpg)" = '62caaafb36015f2c84c1e9d1539c2556e645aabc'
+          test "$(git hash-object public/images/products/chair-detail-back.jpg)" = 'fe8faf6d724c3964a53c3893c20fbac8ac951d15'
 
           cp /tmp/rp01-locks/composer.lock composer.lock
           cp /tmp/rp01-locks/package-lock.json package-lock.json
-          mkdir -p public/images/products
-          cp "$SRC/chair-main.jpg" public/images/products/chair-main.jpg
-          cp "$SRC/chair-detail-side.jpg" public/images/products/chair-detail-side.jpg
-          cp "$SRC/chair-detail-seat.jpg" public/images/products/chair-detail-seat.jpg
-          cp "$SRC/chair-detail-back.jpg" public/images/products/chair-detail-back.jpg
 
       - name: Persist only the six exact blobs on temporary branch
         shell: bash
