@@ -57,10 +57,13 @@ class Product extends Model
     {
         $normalized = $this->normalizeOptions($options);
         $variants = $this->relationLoaded('variants') ? $this->variants : $this->variants()->get();
+        $variants->loadMissing('attributeOptions.attribute');
 
-        return $variants->first(function (Variant $variant) use ($normalized): bool {
-            return $this->normalizeOptions($variant->options ?? []) === $normalized;
+        $matches = $variants->filter(function (Variant $variant) use ($normalized): bool {
+            return $this->normalizeOptions($variant->optionSelection()) === $normalized;
         });
+
+        return $matches->count() === 1 ? $matches->first() : null;
     }
 
     private function normalizeOptions(array $options): array

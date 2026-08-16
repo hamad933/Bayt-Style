@@ -4,6 +4,12 @@
     $media = $product->primaryMedia;
     $saved = in_array($product->id, array_map('intval', session('wishlist', [])), true);
     $compared = in_array($product->id, array_map('intval', session('comparison', [])), true);
+    $sellableVariants = $quickAdd
+        ? ($product->relationLoaded('variants')
+            ? $product->variants->filter(fn ($candidate) => $candidate->isSellable())
+            : $product->variants()->where('is_active', true)->where('inventory_quantity', '>', 0)->get())
+        : collect();
+    $singleSellableVariant = $sellableVariants->count() === 1 ? $sellableVariants->first() : null;
 @endphp
 <article class="product-card" data-testid="product-card">
     <div class="product-image-wrap">
@@ -29,8 +35,19 @@
         <div class="product-price"><bdi>{{ number_format((float) $variant->price, 0) }}</bdi> <span>ر.س</span></div>
     @endif
     <div class="product-card-actions">
-        @if($quickAdd && $variant)
-            <button type="button" class="product-quick-add" @click="$store.cart.add({{ $variant->id }}, 1)">أضف إلى السلة</button>
+        @if($quickAdd && $singleSellableVariant)
+            <button
+                type="button"
+                class="product-quick-add"
+                @click="$store.cart.add({{ $singleSellableVariant->id }}, 1)"
+                data-testid="quick-add-{{ $product->id }}"
+            >أضف إلى السلة</button>
+        @elseif($quickAdd && $sellableVariants->count() > 1)
+            <a
+                class="product-quick-add"
+                href="{{ route('products.show', $product) }}"
+                data-testid="configure-variants-{{ $product->id }}"
+            >اختر الخيارات</a>
         @else
             <a class="product-link" href="{{ route('products.show', $product) }}">معاينة القطعة <span aria-hidden="true">←</span></a>
         @endif

@@ -12,7 +12,7 @@ class ProductController extends Controller
     {
         abort_unless($product->published_at && $product->published_at->lte(now()), 404);
 
-        $product->load(['category', 'defaultVariant', 'variants', 'media']);
+        $product->load(['category', 'defaultVariant', 'variants.attributeOptions.attribute', 'media']);
         abort_unless($product->defaultVariant, 404);
 
         $variantConfig = $this->variantConfig($product);
@@ -22,33 +22,32 @@ class ProductController extends Controller
 
     private function variantConfig(Product $product): array
     {
-        $labels = collect([
-            'color' => 'اللون',
-            'finish' => 'تشطيب القاعدة',
-            'material' => 'الخامة',
-            'size' => 'المقاس',
-        ]);
-
         $variants = $product->variants
             ->sortBy(fn (Variant $variant) => $variant->is_default ? 0 : 1)
             ->values();
 
-        $keys = $variants
-            ->flatMap(fn (Variant $variant) => array_keys($variant->options ?? []))
-            ->unique()
-            ->sortBy(fn (string $key) => ($labels->keys()->search($key) === false ? 99 : $labels->keys()->search($key)))
+        $attributes = $variants
+            ->flatMap(fn (Variant $variant) => $variant->attributeOptions)
+            ->map(fn ($option) => $option->attribute)
+            ->filter()
+            ->unique('id')
+            ->sortBy('sort_order')
             ->values();
 
-        $dimensions = $keys->map(function (string $key) use ($variants, $labels): array {
+        $dimensions = $attributes->map(function ($attribute) use ($variants): array {
+            $values = $variants
+                ->flatMap(fn (Variant $variant) => $variant->attributeOptions
+                    ->where('variant_attribute_id', $attribute->id))
+                ->unique('id')
+                ->sortBy('sort_order')
+                ->pluck('value_ar')
+                ->values()
+                ->all();
+
             return [
-                'key' => $key,
-                'label' => $labels->get($key, $key),
-                'values' => $variants
-                    ->map(fn (Variant $variant) => $variant->options[$key] ?? null)
-                    ->filter()
-                    ->unique()
-                    ->values()
-                    ->all(),
+                'key' => $attribute->code,
+                'label' => $attribute->name_ar,
+                'values' => $values,
             ];
         })->all();
 
@@ -65,7 +64,7 @@ class ProductController extends Controller
                 'inventory' => $variant->inventory_quantity,
                 'active' => $variant->is_active,
                 'available' => $variant->isSellable(),
-                'options' => $variant->options ?? [],
+                'options' => $variant->optionSelection(),
             ])->all(),
         ];
     }
