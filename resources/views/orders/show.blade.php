@@ -138,5 +138,14 @@
             <a class="s07-text-link" href="{{ route('home') }}">العودة إلى الرئيسية</a>
         </div>
     </section>
+
+    <section class="s07-next" aria-labelledby="returns-title">
+        <p class="eyebrow">المرتجعات والاسترداد</p>
+        <h2 id="returns-title">تفاصيل ما بعد الطلب في مكان واحد</h2>
+        <p>تحقق من أهلية منتجات الطلب للمرتجع، وحالة أي مرتجع أو استرداد مالي مسجّل، وأي رصيد متجر صادر — من دون افتراض خطوات لم تحدث.</p>
+        <div class="s07-actions">
+            <a class="button button-primary" href="{{ route('orders.returns.index', $order) }}" data-testid="open-returns">عرض المرتجعات والاسترداد</a>
+        </div>
+    </section>
 </section>
 @endsection
