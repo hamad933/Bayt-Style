@@ -57,7 +57,7 @@ class StoreCreditLedgerIntegrityTest extends TestCase
             ->assertSeeText('100.00');
     }
 
-    public function test_valid_reversal_produces_exact_balance_and_integrity_is_independent_of_collection_iteration_order(): void
+    public function test_valid_reversal_produces_exact_balance_even_when_occurred_at_sorts_before_target(): void
     {
         $order = $this->placeOrder();
         $ledger = app(StoreCreditLedgerService::class);
@@ -68,7 +68,7 @@ class StoreCreditLedgerIntegrityTest extends TestCase
             currency: 'SAR',
             sourceType: 'authoritative_credit_record',
             sourceReference: 'SC-REV-CREDIT',
-            occurredAt: now()->subMinutes(2),
+            occurredAt: now(),
         );
         $reversal = $ledger->record(
             order: $order,
@@ -181,24 +181,41 @@ class StoreCreditLedgerIntegrityTest extends TestCase
         $this->assertDatabaseCount('store_credit_entries', 0);
     }
 
-    public function test_reversal_cannot_precede_its_target_causally(): void
+    public function test_reversal_cannot_precede_its_target_in_ledger_identity(): void
     {
         $order = $this->placeOrder();
         $ledger = app(StoreCreditLedgerService::class);
-        $credit = $this->credit($ledger, $order, 'SC-CAUSAL-CREDIT', now());
 
-        $this->assertDomainRejected(fn () => $ledger->record(
-            order: $order,
-            entryType: 'reversal',
-            amount: '120.00',
-            currency: 'SAR',
-            sourceType: 'authoritative_reversal_record',
-            sourceReference: 'SC-CAUSAL-REVERSAL',
-            reversalOfEntryId: $credit->id,
-            occurredAt: now()->subMinute(),
-        ));
+        DB::table('store_credit_entries')->insert([
+            'id' => 200,
+            'order_id' => $order->id,
+            'return_case_id' => null,
+            'entry_type' => 'credit',
+            'amount' => '120.00',
+            'currency' => 'SAR',
+            'source_type' => 'causal_probe',
+            'source_reference' => 'SC-CAUSAL-TARGET',
+            'reversal_of_entry_id' => null,
+            'correlation_id' => (string) Str::uuid(),
+            'occurred_at' => now(),
+        ]);
+        DB::table('store_credit_entries')->insert([
+            'id' => 100,
+            'order_id' => $order->id,
+            'return_case_id' => null,
+            'entry_type' => 'reversal',
+            'amount' => '120.00',
+            'currency' => 'SAR',
+            'source_type' => 'causal_probe',
+            'source_reference' => 'SC-CAUSAL-REVERSAL',
+            'reversal_of_entry_id' => 200,
+            'correlation_id' => (string) Str::uuid(),
+            'occurred_at' => now(),
+        ]);
 
-        $this->assertDatabaseCount('store_credit_entries', 1);
+        $entries = StoreCreditEntry::query()->where('order_id', $order->id)->get();
+
+        $this->assertDomainRejected(fn () => $ledger->assertProjectionIntegrity($order, $entries));
     }
 
     public function test_failed_reversal_leaves_ledger_unchanged(): void
@@ -268,7 +285,7 @@ class StoreCreditLedgerIntegrityTest extends TestCase
         $this->assertSame(1, StoreCreditEntry::query()->where('reversal_of_entry_id', $credit->id)->count());
     }
 
-    public function test_internally_inconsistent_persisted_ledger_fails_safe_instead_of_projecting_zero(): void
+    public function test_internally_inconsistent_persisted_ledger_fails_safe_instead_of_projecting_balance(): void
     {
         $order = $this->placeOrder();
         $target = StoreCreditEntry::query()->create([
@@ -282,6 +299,18 @@ class StoreCreditLedgerIntegrityTest extends TestCase
             'correlation_id' => (string) Str::uuid(),
             'occurred_at' => now(),
         ]);
+        $firstReversal = StoreCreditEntry::query()->create([
+            'order_id' => $order->id,
+            'return_case_id' => null,
+            'entry_type' => 'reversal',
+            'amount' => '120.00',
+            'currency' => 'SAR',
+            'source_type' => 'corruption_probe',
+            'source_reference' => 'SC-CORRUPT-REVERSAL-ONE',
+            'reversal_of_entry_id' => $target->id,
+            'correlation_id' => (string) Str::uuid(),
+            'occurred_at' => now(),
+        ]);
         StoreCreditEntry::query()->create([
             'order_id' => $order->id,
             'return_case_id' => null,
@@ -289,10 +318,10 @@ class StoreCreditLedgerIntegrityTest extends TestCase
             'amount' => '120.00',
             'currency' => 'SAR',
             'source_type' => 'corruption_probe',
-            'source_reference' => 'SC-CORRUPT-REVERSAL',
-            'reversal_of_entry_id' => $target->id,
+            'source_reference' => 'SC-CORRUPT-REVERSAL-TWO',
+            'reversal_of_entry_id' => $firstReversal->id,
             'correlation_id' => (string) Str::uuid(),
-            'occurred_at' => now()->subMinute(),
+            'occurred_at' => now(),
         ]);
 
         $this->get(route('orders.returns.index', $order))->assertServerError();

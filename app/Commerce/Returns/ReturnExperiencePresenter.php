@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\RefundRecord;
 use App\Models\ReturnCase;
 use App\Models\StoreCreditEntry;
+use DomainException;
 use Illuminate\Support\Collection;
 
 class ReturnExperiencePresenter
@@ -197,7 +198,9 @@ class ReturnExperiencePresenter
 
     private function storeCredit(Order $order): array
     {
-        $entries = $order->storeCreditEntries
+        $ledgerEntries = $order->storeCreditEntries;
+        $entriesById = $ledgerEntries->keyBy(fn (StoreCreditEntry $entry): int => (int) $entry->id);
+        $entries = $ledgerEntries
             ->sortBy([['occurred_at', 'asc'], ['id', 'asc']])
             ->values();
 
@@ -215,7 +218,7 @@ class ReturnExperiencePresenter
         $balances = [];
 
         foreach ($entries as $entry) {
-            $delta = $this->creditDelta($entry, $deltas);
+            $delta = $this->creditDelta($entry, $entriesById);
             $deltas[$entry->id] = $delta;
             $balances[$entry->currency] = ($balances[$entry->currency] ?? 0.0) + $delta;
         }
@@ -232,7 +235,7 @@ class ReturnExperiencePresenter
                         'reversal' => 'عكس قيد سابق',
                         default => 'قيد رصيد متجر',
                     },
-                    'delta' => $deltas[$entry->id] ?? 0.0,
+                    'delta' => $deltas[$entry->id],
                     'currency' => $entry->currency,
                     'occurred_at' => $entry->occurred_at,
                 ];
@@ -240,17 +243,40 @@ class ReturnExperiencePresenter
         ];
     }
 
-    private function creditDelta(StoreCreditEntry $entry, array $knownDeltas): float
+    private function creditDelta(StoreCreditEntry $entry, Collection $entriesById): float
+    {
+        $amount = (float) $entry->amount;
+
+        if ($entry->entry_type === 'credit') {
+            return $amount;
+        }
+
+        if ($entry->entry_type === 'debit') {
+            return -$amount;
+        }
+
+        if ($entry->entry_type !== 'reversal' || $entry->reversal_of_entry_id === null) {
+            throw new DomainException('Store-credit ledger cannot be projected from an invalid entry.');
+        }
+
+        /** @var StoreCreditEntry|null $target */
+        $target = $entriesById->get((int) $entry->reversal_of_entry_id);
+
+        if (! $target) {
+            throw new DomainException('Store-credit reversal target cannot be resolved for projection.');
+        }
+
+        return -$this->directCreditDelta($target);
+    }
+
+    private function directCreditDelta(StoreCreditEntry $entry): float
     {
         $amount = (float) $entry->amount;
 
         return match ($entry->entry_type) {
             'credit' => $amount,
             'debit' => -$amount,
-            'reversal' => $entry->reversal_of_entry_id !== null
-                ? -($knownDeltas[$entry->reversal_of_entry_id] ?? 0.0)
-                : 0.0,
-            default => 0.0,
+            default => throw new DomainException('Store-credit reversal target is not an original ledger entry.'),
         };
     }
 }
