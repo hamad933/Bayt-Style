@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Commerce\CustomerOrderAccess;
 use App\Commerce\Returns\ReturnCaseService;
 use App\Commerce\Returns\ReturnExperiencePresenter;
+use App\Commerce\Returns\StoreCreditLedgerService;
 use App\Models\Order;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,7 @@ class ReturnController extends Controller
         Order $order,
         CustomerOrderAccess $access,
         ReturnExperiencePresenter $presenter,
+        StoreCreditLedgerService $storeCreditLedger,
     ): View {
         $access->authorize($request, $order);
 
@@ -31,6 +33,8 @@ class ReturnController extends Controller
             'refundRecords',
             'storeCreditEntries',
         ]);
+
+        $storeCreditLedger->assertProjectionIntegrity($order, $order->storeCreditEntries);
 
         return view('returns.index', [
             'order' => $order,

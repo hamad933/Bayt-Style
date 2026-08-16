@@ -97,7 +97,7 @@ return new class extends Migration {
             $table->char('currency', 3);
             $table->string('source_type', 80);
             $table->string('source_reference', 160);
-            $table->foreignId('reversal_of_entry_id')->nullable()->constrained('store_credit_entries')->restrictOnDelete();
+            $table->foreignId('reversal_of_entry_id')->nullable()->unique()->constrained('store_credit_entries')->restrictOnDelete();
             $table->uuid('correlation_id');
             $table->timestampTz('occurred_at');
             $table->index(['order_id', 'currency', 'occurred_at']);
