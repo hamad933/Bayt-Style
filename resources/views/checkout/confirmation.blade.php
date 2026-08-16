@@ -38,7 +38,10 @@
         <p class="eyebrow">الخطوة التالية</p>
         <h2>يبقى الطلب بانتظار استكمال الخطوات التالية</h2>
         <p>سيبقى الطلب بانتظار استكمال الدفع والتأكد من التوفر وفق السياسة المعتمدة. لا يوجد موعد توصيل مؤكد حتى الآن.</p>
-        <a class="button button-primary" href="{{ route('catalog') }}">العودة إلى المنتجات</a>
+        <div class="s07-actions">
+            <a class="button button-primary" href="{{ route('orders.show', $order) }}">عرض حالة الطلب</a>
+            <a class="s07-text-link" href="{{ route('catalog') }}">العودة إلى المنتجات</a>
+        </div>
     </div>
 </section>
 @endsection

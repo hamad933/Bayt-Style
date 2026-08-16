@@ -119,7 +119,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rp01-s01-s06-browser-evidence
+          name: rp01-s01-s07-browser-evidence
           path: |
             storage/test-artifacts/
             playwright-report/
