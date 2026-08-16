@@ -49,6 +49,8 @@ jobs:
           sha256sum composer.json package.json > /tmp/rp01-manifests.after
           diff -u /tmp/rp01-manifests.before /tmp/rp01-manifests.after
           git diff --exit-code -- composer.json package.json
+          echo "composer_blob=$(git hash-object composer.lock)"
+          echo "package_blob=$(git hash-object package-lock.json)"
           test "$(git hash-object composer.lock)" = '66df49f1c323b25cccd38552b40882e83edb4270'
           test "$(git hash-object package-lock.json)" = 'a2c6034d8bf184de8cc28508ccb94b124f78a582'
 
