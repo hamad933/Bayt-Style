@@ -1,11 +1,11 @@
-name: RP01 Temporary Byte Transfer
+name: RP01 Exact Blob Materializer
 
 on:
   push:
     branches:
       - tmp-test-ignore
     paths:
-      - .rp01-transfer/READY
+      - .github/workflows/rp01-transfer-temp.yml
 
 permissions:
   contents: write
@@ -13,47 +13,104 @@ permissions:
 jobs:
   materialize:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
-      - name: Check out exact transfer head
+      - name: Check out temporary transfer branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: tmp-test-ignore
           fetch-depth: 0
 
-      - name: Reconstruct and verify exact payload
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat .rp01-transfer/chunk-* > /tmp/rp01-transfer.b64
-          base64 --decode /tmp/rp01-transfer.b64 > /tmp/rp01-transfer.tar.xz
-          echo '81f9c0685b618430634d12afdc9dfc6253cf73e28d24a9002309a516952d44b7  /tmp/rp01-transfer.tar.xz' | sha256sum -c -
-          rm -rf /tmp/rp01-payload
-          mkdir -p /tmp/rp01-payload
-          tar -xJf /tmp/rp01-transfer.tar.xz -C /tmp/rp01-payload
-          test "$(git hash-object /tmp/rp01-payload/composer.lock)" = '66df49f1c323b25cccd38552b40882e83edb4270'
-          test "$(git hash-object /tmp/rp01-payload/package-lock.json)" = 'a2c6034d8bf184de8cc28508ccb94b124f78a582'
-          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-main.jpg)" = '5a3b627a9f01129672d1038ac53dee1d113fcee4'
-          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-detail-side.jpg)" = '3f12b612ef4bbd75dfa988df68164ceaf01b1243'
-          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-detail-seat.jpg)" = '62caaafb36015f2c84c1e9d1539c2556e645aabc'
-          test "$(git hash-object /tmp/rp01-payload/public/images/products/chair-detail-back.jpg)" = 'fe8faf6d724c3964a53c3893c20fbac8ac951d15'
-          cp /tmp/rp01-payload/composer.lock composer.lock
-          cp /tmp/rp01-payload/package-lock.json package-lock.json
-          cp /tmp/rp01-payload/public/images/products/chair-main.jpg public/images/products/chair-main.jpg
-          cp /tmp/rp01-payload/public/images/products/chair-detail-side.jpg public/images/products/chair-detail-side.jpg
-          cp /tmp/rp01-payload/public/images/products/chair-detail-seat.jpg public/images/products/chair-detail-seat.jpg
-          cp /tmp/rp01-payload/public/images/products/chair-detail-back.jpg public/images/products/chair-detail-back.jpg
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
 
-      - name: Persist exact blobs on transfer branch
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Materialize exact locks and accepted S03 bytes
         shell: bash
         run: |
           set -euo pipefail
+          TARGET_SHA='55f1b2d6c0a6371519f7af7780302cd553b69a7a'
+          git fetch origin rp01/real-implementation-s01-s03
+          test "$(git rev-parse origin/rp01/real-implementation-s01-s03)" = "$TARGET_SHA"
+          rm -rf /tmp/rp01-target
+          git worktree add --detach /tmp/rp01-target "$TARGET_SHA"
+          cd /tmp/rp01-target
+
+          sha256sum composer.json package.json > /tmp/rp01-manifests.before
+          composer update --no-install --no-scripts --no-interaction --prefer-dist --no-progress
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          sha256sum composer.json package.json > /tmp/rp01-manifests.after
+          diff -u /tmp/rp01-manifests.before /tmp/rp01-manifests.after
+          git diff --exit-code -- composer.json package.json
+          test "$(git hash-object composer.lock)" = '66df49f1c323b25cccd38552b40882e83edb4270'
+          test "$(git hash-object package-lock.json)" = 'a2c6034d8bf184de8cc28508ccb94b124f78a582'
+
+          ZIP=/tmp/rp01-s03.zip
+          URL1='https://drive.usercontent.google.com/download?id=1CsvOvnUtqyTnLIqYHm7SWKMueX6iWd8i&export=download&confirm=t'
+          URL2='https://drive.google.com/uc?export=download&id=1CsvOvnUtqyTnLIqYHm7SWKMueX6iWd8i&confirm=t'
+          if ! curl -L --fail --retry 3 --retry-delay 2 "$URL1" -o "$ZIP"; then
+            curl -L --fail --retry 3 --retry-delay 2 "$URL2" -o "$ZIP"
+          fi
+          echo '2503e263d731bc44ebdb68b704339973245af16b4a7bcd0536b8c8a6a92649cc  /tmp/rp01-s03.zip' | sha256sum -c -
+          mkdir -p public/images/products
+          unzip -p "$ZIP" 'RP01-S03_Product_Detail/assets/chair-main.jpg' > public/images/products/chair-main.jpg
+          unzip -p "$ZIP" 'RP01-S03_Product_Detail/assets/chair-detail-side.jpg' > public/images/products/chair-detail-side.jpg
+          unzip -p "$ZIP" 'RP01-S03_Product_Detail/assets/chair-detail-seat.jpg' > public/images/products/chair-detail-seat.jpg
+          unzip -p "$ZIP" 'RP01-S03_Product_Detail/assets/chair-detail-back.jpg' > public/images/products/chair-detail-back.jpg
+
+          echo '9b4d59d3b9f9244e1a7f14cad9f7bc58d54dd43b34d980513199d222f0004901  public/images/products/chair-main.jpg' | sha256sum -c -
+          echo '139a13fc55e65f7b339e3ca970c6af0931f8e608414818d8887475e68dae506a  public/images/products/chair-detail-side.jpg' | sha256sum -c -
+          echo 'ac1923edbd7f1299ed2648136dc7f568338fa985197731e4ddd620dd6c9bcccd  public/images/products/chair-detail-seat.jpg' | sha256sum -c -
+          echo 'f32dabf7c717c2921a35519fbbc2e5927365c5cb686ef5cf5b484cffe733e768  public/images/products/chair-detail-back.jpg' | sha256sum -c -
+          test "$(git hash-object public/images/products/chair-main.jpg)" = '5a3b627a9f01129672d1038ac53dee1d113fcee4'
+          test "$(git hash-object public/images/products/chair-detail-side.jpg)" = '3f12b612ef4bbd75dfa988df68164ceaf01b1243'
+          test "$(git hash-object public/images/products/chair-detail-seat.jpg)" = '62caaafb36015f2c84c1e9d1539c2556e645aabc'
+          test "$(git hash-object public/images/products/chair-detail-back.jpg)" = 'fe8faf6d724c3964a53c3893c20fbac8ac951d15'
+
+          cp composer.lock "$GITHUB_WORKSPACE/composer.lock"
+          cp package-lock.json "$GITHUB_WORKSPACE/package-lock.json"
+          cp public/images/products/chair-main.jpg "$GITHUB_WORKSPACE/public/images/products/chair-main.jpg"
+          cp public/images/products/chair-detail-side.jpg "$GITHUB_WORKSPACE/public/images/products/chair-detail-side.jpg"
+          cp public/images/products/chair-detail-seat.jpg "$GITHUB_WORKSPACE/public/images/products/chair-detail-seat.jpg"
+          cp public/images/products/chair-detail-back.jpg "$GITHUB_WORKSPACE/public/images/products/chair-detail-back.jpg"
+
+      - name: Persist only the six exact blobs on the temporary branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object composer.lock)" = '66df49f1c323b25cccd38552b40882e83edb4270'
+          test "$(git hash-object package-lock.json)" = 'a2c6034d8bf184de8cc28508ccb94b124f78a582'
+          test "$(git hash-object public/images/products/chair-main.jpg)" = '5a3b627a9f01129672d1038ac53dee1d113fcee4'
+          test "$(git hash-object public/images/products/chair-detail-side.jpg)" = '3f12b612ef4bbd75dfa988df68164ceaf01b1243'
+          test "$(git hash-object public/images/products/chair-detail-seat.jpg)" = '62caaafb36015f2c84c1e9d1539c2556e645aabc'
+          test "$(git hash-object public/images/products/chair-detail-back.jpg)" = 'fe8faf6d724c3964a53c3893c20fbac8ac951d15'
+
           git add composer.lock package-lock.json \
             public/images/products/chair-main.jpg \
             public/images/products/chair-detail-side.jpg \
             public/images/products/chair-detail-seat.jpg \
             public/images/products/chair-detail-back.jpg
+          python3 - <<'PY'
+          import subprocess
+          expected = {
+              'composer.lock', 'package-lock.json',
+              'public/images/products/chair-main.jpg',
+              'public/images/products/chair-detail-side.jpg',
+              'public/images/products/chair-detail-seat.jpg',
+              'public/images/products/chair-detail-back.jpg',
+          }
+          actual = set(subprocess.check_output(['git','diff','--cached','--name-only'], text=True).splitlines())
+          if actual != expected:
+              raise SystemExit(f'unexpected staged paths: {sorted(actual ^ expected)}')
+          PY
           git config user.name 'RP01 bounded executor'
           git config user.email 'actions@users.noreply.github.com'
-          git commit -m 'chore(transfer): materialize exact RP01 correction blobs'
+          git commit -m 'chore(transfer): materialize exact RP01 final blobs'
           git push origin HEAD:tmp-test-ignore
