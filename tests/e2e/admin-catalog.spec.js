@@ -63,12 +63,14 @@ for (const viewport of [
     await assertNoPageOverflow(page);
 
     if (viewport.width === 1440) {
+      const reason = 'تعديل تجريبي موثق ضمن تحقق المتصفح';
       const adjustmentForm = page.locator('form.admin-form--inventory').first();
       await adjustmentForm.getByLabel('التغيير في الكمية').fill('1');
-      await adjustmentForm.getByLabel('سبب التعديل').fill('تعديل تجريبي موثق ضمن تحقق المتصفح');
+      await adjustmentForm.getByLabel('سبب التعديل').fill(reason);
       await adjustmentForm.getByRole('button', { name: 'تسجيل حركة المخزون' }).click();
       await expect(page.getByText('تم تسجيل حركة المخزون وتحديث الرصيد الحالي.')).toBeVisible();
-      await expect(page.getByText('تعديل تجريبي موثق ضمن تحقق المتصفح')).toBeVisible();
+      await expect(page.getByRole('region', { name: 'سجل حركة المخزون' }).getByText(reason)).toBeVisible();
+      await expect(page.getByRole('region', { name: 'سجل التدقيق' }).getByText(reason)).toBeVisible();
       await assertNoPageOverflow(page);
     }
 

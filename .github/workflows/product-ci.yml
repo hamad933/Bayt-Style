@@ -91,8 +91,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          admin_password="$(openssl rand -hex 24)"
+          echo "::add-mask::$admin_password"
           echo "S09_ADMIN_EMAIL=ci-s09-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@example.test" >> "$GITHUB_ENV"
-          echo "S09_ADMIN_PASSWORD=$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+          echo "S09_ADMIN_PASSWORD=$admin_password" >> "$GITHUB_ENV"
 
       - name: Reset demo data for browser verification
         shell: bash
