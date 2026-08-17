@@ -218,10 +218,17 @@
         <div class="admin-panel__head"><div><p class="admin-eyebrow">Audit</p><h2 id="audit-title">سجل التدقيق</h2></div></div>
         <div class="admin-history-list">
             @forelse ($auditLogs as $log)
+                @php($auditLabel = match ($log->action) {
+                    'catalog.product.updated' => 'تحديث بيانات المنتج',
+                    'catalog.variant.updated' => 'تحديث بيانات الخيار البيعي',
+                    'inventory.variant.adjusted' => 'تعديل مخزون الخيار البيعي',
+                    default => 'إجراء إداري موثّق',
+                })
+                @php($entityLabel = $log->entity_type === 'product' ? 'المنتج' : 'الخيار البيعي')
                 <article class="admin-history-item">
-                    <div><strong dir="ltr">{{ $log->action }}</strong><span>{{ $log->entity_type }} #{{ $log->entity_id }}</span></div>
+                    <div><strong>{{ $auditLabel }}</strong><span>{{ $entityLabel }} #{{ $log->entity_id }}</span></div>
                     <p>{{ $log->reason }}</p>
-                    <small>{{ $log->actor_identifier }} · <bdi dir="ltr">{{ $log->correlation_id }}</bdi></small>
+                    <small><bdi dir="ltr">{{ $log->action }}</bdi> · {{ $log->actor_identifier }} · <bdi dir="ltr">{{ $log->correlation_id }}</bdi></small>
                 </article>
             @empty
                 <p class="admin-empty">لا توجد تغييرات حساسة بعد.</p>

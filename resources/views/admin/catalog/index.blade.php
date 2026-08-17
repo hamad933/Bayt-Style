@@ -43,7 +43,7 @@
             <th>التصنيف</th>
             <th>النشر</th>
             <th>الخيارات</th>
-            <th>SKU الافتراضي</th>
+            <th>SKU</th>
             <th>رصيد المخزون</th>
             <th><span class="sr-only">إجراء</span></th>
         </tr>
@@ -59,7 +59,11 @@
                 <td>{{ $product->category?->name_ar ?? '—' }}</td>
                 <td><span class="admin-status {{ $published ? 'is-positive' : 'is-muted' }}">{{ $published ? 'منشور' : 'مسودة' }}</span></td>
                 <td>{{ $product->variants_count }}</td>
-                <td><span dir="ltr">{{ $product->defaultVariant?->sku ?? '—' }}</span></td>
+                <td>
+                    @foreach ($product->variants->sortByDesc('is_default') as $variant)
+                        <span class="admin-table__primary" dir="ltr">{{ $variant->sku }}</span>
+                    @endforeach
+                </td>
                 <td>{{ number_format((int) ($product->variants_sum_inventory_quantity ?? 0)) }}</td>
                 <td><a class="admin-row-action" href="{{ route('admin.catalog.edit', $product) }}">إدارة</a></td>
             </tr>

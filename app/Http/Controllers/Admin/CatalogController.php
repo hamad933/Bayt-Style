@@ -18,7 +18,11 @@ class CatalogController extends Controller
         }
 
         $products = Product::query()
-            ->with(['category', 'defaultVariant'])
+            ->with([
+                'category',
+                'defaultVariant',
+                'variants:id,product_id,sku,is_default',
+            ])
             ->withCount('variants')
             ->withSum('variants', 'inventory_quantity')
             ->when($search !== '', function ($query) use ($search): void {

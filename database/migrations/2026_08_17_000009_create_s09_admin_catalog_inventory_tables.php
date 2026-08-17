@@ -61,7 +61,7 @@ return new class extends Migration {
                 'quantity_delta' => (int) $variant->inventory_quantity,
                 'quantity_before' => 0,
                 'quantity_after' => (int) $variant->inventory_quantity,
-                'reason' => 'S09 baseline adoption of the existing inventory projection.',
+                'reason' => 'اعتماد رصيد المخزون الحالي كرصد افتتاحي عند إدخال حدود S09.',
                 'actor_user_id' => null,
                 'actor_identifier' => 'system:s09-baseline',
                 'correlation_id' => (string) Str::uuid(),

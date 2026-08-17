@@ -39,7 +39,7 @@ class Variant extends Model
                     'quantity_delta' => (int) $variant->inventory_quantity,
                     'quantity_before' => 0,
                     'quantity_after' => (int) $variant->inventory_quantity,
-                    'reason' => 'Initial inventory balance captured when the variant was created.',
+                    'reason' => 'تسجيل الرصيد الافتتاحي عند إنشاء الخيار البيعي.',
                     'actor_user_id' => null,
                     'actor_identifier' => 'system:variant-create',
                     'correlation_id' => (string) Str::uuid(),
