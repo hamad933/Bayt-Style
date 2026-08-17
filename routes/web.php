@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\CatalogController as AdminCatalogController;
+use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\VariantController as AdminVariantController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
@@ -40,3 +45,19 @@ Route::get('/orders/{order:order_number}/returns', [ReturnController::class, 'in
     ->name('orders.returns.index');
 Route::post('/orders/{order:order_number}/returns', [ReturnController::class, 'store'])
     ->name('orders.returns.store');
+
+Route::prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.store');
+
+    Route::middleware('catalog-admin')->group(function (): void {
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+        Route::get('/catalog', [AdminCatalogController::class, 'index'])->name('catalog.index');
+        Route::get('/catalog/{product}/edit', [AdminProductController::class, 'edit'])->name('catalog.edit');
+        Route::patch('/catalog/{product}', [AdminProductController::class, 'update'])->name('catalog.update');
+        Route::patch('/catalog/{product}/variants/{variant}', [AdminVariantController::class, 'update'])
+            ->name('variants.update');
+        Route::post('/catalog/{product}/variants/{variant}/inventory-adjustments', [AdminInventoryController::class, 'adjust'])
+            ->name('inventory.adjust');
+    });
+});
