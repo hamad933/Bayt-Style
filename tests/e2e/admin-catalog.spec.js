@@ -5,6 +5,8 @@ import path from 'node:path';
 const adminEmail = process.env.S09_ADMIN_EMAIL;
 const adminPassword = process.env.S09_ADMIN_PASSWORD;
 
+test.describe.configure({ mode: 'serial' });
+
 async function login(page) {
   if (!adminEmail || !adminPassword) {
     throw new Error('S09_ADMIN_EMAIL and S09_ADMIN_PASSWORD are required for Admin browser evidence.');
@@ -47,9 +49,13 @@ for (const viewport of [
 
     await page.getByLabel('بحث').fill('BAS-CHAIR-SAND-01');
     await page.getByRole('button', { name: 'تطبيق' }).click();
-    await expect(page.getByText('BAS-CHAIR-SAND-01')).toBeVisible();
-    await page.getByRole('link', { name: 'إدارة' }).first().click();
 
+    const matchedRow = page.getByRole('row').filter({ hasText: 'BAS-CHAIR-SAND-01' });
+    await expect(matchedRow).toHaveCount(1);
+    await expect(matchedRow.getByText('BAS-CHAIR-SAND-01', { exact: true })).toBeVisible();
+    await matchedRow.getByRole('link', { name: 'إدارة' }).click();
+
+    await expect(page).toHaveURL(/\/admin\/catalog\/\d+\/edit$/);
     await expect(page.getByRole('heading', { name: 'خيارات البيع والمخزون' })).toBeVisible();
     await expect(page.getByText('التكوين الحالي').first()).toBeVisible();
     await expect(page.getByText('سجل حركة المخزون')).toBeVisible();
