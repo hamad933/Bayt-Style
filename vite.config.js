@@ -10,6 +10,7 @@ export default defineConfig({
         'resources/css/s04-s05.css',
         'resources/css/s06.css',
         'resources/css/s07.css',
+        'resources/css/s08.css',
         'resources/js/app.js',
       ],
       refresh: true,

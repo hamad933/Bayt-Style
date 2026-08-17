@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
@@ -6,6 +7,7 @@ use App\Http\Controllers\ComparisonController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,3 +36,7 @@ Route::get('/checkout/confirmation/{order:order_number}', [CheckoutController::c
     ->name('checkout.confirmation');
 
 Route::get('/orders/{order:order_number}', OrderStatusController::class)->name('orders.show');
+Route::get('/orders/{order:order_number}/returns', [ReturnController::class, 'index'])
+    ->name('orders.returns.index');
+Route::post('/orders/{order:order_number}/returns', [ReturnController::class, 'store'])
+    ->name('orders.returns.store');
