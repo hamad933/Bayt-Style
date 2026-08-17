@@ -87,8 +87,19 @@ jobs:
       - name: Run Laravel tests
         run: composer test
 
+      - name: Create ephemeral S09 browser identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "S09_ADMIN_EMAIL=ci-s09-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@example.test" >> "$GITHUB_ENV"
+          echo "S09_ADMIN_PASSWORD=$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+
       - name: Reset demo data for browser verification
-        run: php artisan migrate:fresh --seed --force
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan migrate:fresh --seed --force
+          php artisan db:seed --class='Database\Seeders\S09AdminSeeder' --force
 
       - name: Record exact evidence HEAD
         run: |
@@ -119,7 +130,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rp01-s01-s08-browser-evidence
+          name: rp01-s01-s09-browser-evidence
           path: |
             storage/test-artifacts/
             playwright-report/
