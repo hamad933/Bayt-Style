@@ -3,7 +3,9 @@
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CatalogController as AdminCatalogController;
 use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ReturnController as AdminReturnController;
 use App\Http\Controllers\Admin\VariantController as AdminVariantController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
@@ -59,5 +61,17 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             ->name('variants.update');
         Route::post('/catalog/{product}/variants/{variant}/inventory-adjustments', [AdminInventoryController::class, 'adjust'])
             ->name('inventory.adjust');
+
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order:order_number}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{order:order_number}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::post('/orders/{order:order_number}/returns/{returnCase:return_number}/authorize', [AdminReturnController::class, 'authorizeCase'])
+            ->name('returns.authorize');
+        Route::post('/orders/{order:order_number}/returns/{returnCase:return_number}/receive', [AdminReturnController::class, 'receive'])
+            ->name('returns.receive');
+        Route::post('/orders/{order:order_number}/returns/{returnCase:return_number}/inspect', [AdminReturnController::class, 'inspect'])
+            ->name('returns.inspect');
+        Route::post('/orders/{order:order_number}/returns/{returnCase:return_number}/disposition', [AdminReturnController::class, 'decideDisposition'])
+            ->name('returns.disposition');
     });
 });

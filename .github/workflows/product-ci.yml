@@ -102,6 +102,7 @@ jobs:
           set -euo pipefail
           php artisan migrate:fresh --seed --force
           php artisan db:seed --class='Database\Seeders\S09AdminSeeder' --force
+          php artisan db:seed --class='Database\Seeders\S10AdminOrdersSeeder' --force
 
       - name: Record exact evidence HEAD
         run: |
@@ -132,7 +133,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rp01-s01-s09-browser-evidence
+          name: rp01-s01-s10-browser-evidence
           path: |
             storage/test-artifacts/
             playwright-report/

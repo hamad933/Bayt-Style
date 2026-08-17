@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'إدارة بيت وأسلوب')</title>
-    @vite(['resources/css/app.css', 'resources/css/s09.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/s09.css', 'resources/css/s10.css', 'resources/js/app.js'])
 </head>
 <body class="admin-body">
 <a class="skip-link" href="#admin-main">انتقل إلى المحتوى الرئيسي</a>
@@ -15,12 +15,14 @@
             <span class="admin-brand__mark" aria-hidden="true">ب</span>
             <span>
                 <strong>بيت وأسلوب</strong>
-                <small>إدارة الكتالوج والمخزون</small>
+                <small>إدارة المتجر</small>
             </span>
         </a>
         <nav class="admin-nav">
             <a class="admin-nav__link {{ request()->routeIs('admin.catalog.*', 'admin.variants.*', 'admin.inventory.*') ? 'is-active' : '' }}"
                href="{{ route('admin.catalog.index') }}">الكتالوج والمخزون</a>
+            <a class="admin-nav__link {{ request()->routeIs('admin.orders.*', 'admin.returns.*') ? 'is-active' : '' }}"
+               href="{{ route('admin.orders.index') }}">الطلبات والمدفوعات والمرتجعات</a>
         </nav>
         <div class="admin-sidebar__foot">
             <p class="admin-identity"><span>المستخدم</span><strong>{{ auth()->user()->name }}</strong><small>{{ auth()->user()->email }}</small></p>
@@ -35,7 +37,7 @@
         <header class="admin-topbar">
             <div>
                 <p class="admin-eyebrow">سطح تشغيلي محمي</p>
-                <p class="admin-topbar__title">@yield('page-title', 'الكتالوج والمخزون')</p>
+                <p class="admin-topbar__title">@yield('page-title', 'إدارة المتجر')</p>
             </div>
             <a class="admin-store-link" href="{{ route('home') }}">فتح المتجر</a>
         </header>
@@ -46,7 +48,7 @@
             @endif
             @if ($errors->any())
                 <div class="admin-alert admin-alert--error" role="alert">
-                    <strong>تعذر حفظ التغييرات.</strong>
+                    <strong>تعذر تنفيذ العملية.</strong>
                     <ul>
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
