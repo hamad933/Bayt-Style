@@ -50,7 +50,7 @@ async function assertReviewablePage(page, surface) {
     text: document.body?.innerText || '',
   }));
   expect(metrics.documentWidth, `${surface} horizontal overflow`).toBeLessThanOrEqual(metrics.viewportWidth + 1);
-  expect(metrics.text, `${surface} server exception/debug page`).not.toMatch(/Whoops, looks like something went wrong|Stack trace|Illuminate\\\\|Symfony\\\\Component\\\\ErrorHandler|Server Error/i);
+  expect(metrics.text, `${surface} server exception/debug page`).not.toMatch(/Whoops, looks like something went wrong|Stack trace|Illuminate\\|Symfony\\Component\\ErrorHandler|Server Error/i);
 }
 
 async function capture(page, surface, route, state, viewport) {
@@ -71,7 +71,7 @@ async function capture(page, surface, route, state, viewport) {
     state,
     viewportWidth: viewport.width,
     viewportHeight: viewport.height,
-    screenshotPath: path.relative(process.cwd(), screenshotPath).replaceAll('\\\\', '/'),
+    screenshotPath: path.relative(process.cwd(), screenshotPath).replaceAll('\\', '/'),
     productApplicationBytesDifferFromAcceptedBaseline: false,
     testRunProvenance: {
       githubRunId: process.env.GITHUB_RUN_ID || null,
@@ -222,7 +222,8 @@ for (const viewport of viewports) {
 test('[IPA] bounded secondary state evidence', async ({ page }) => {
   const viewport = { width: 1440, height: 1000 };
   await page.setViewportSize(viewport);
-  await gotoAndAssert(page, '/catalog?search=NO_SUCH_RP01_PRODUCT_001');
+  await gotoAndAssert(page, '/catalog?q=NO_SUCH_RP01_PRODUCT_001');
+  await expect(page.getByTestId('product-card')).toHaveCount(0);
   await assertReviewablePage(page, 'secondary-catalog-no-results');
   await page.screenshot({ path: path.join(outputDir, 'secondary-catalog-no-results-1440.png'), fullPage: true });
 
