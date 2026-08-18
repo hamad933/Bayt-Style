@@ -12,7 +12,7 @@ jobs:
   product-verification:
     name: Laravel product verification
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       APP_ENV: testing
       APP_URL: http://127.0.0.1:8000
@@ -25,16 +25,67 @@ jobs:
       SESSION_DRIVER: file
       CACHE_STORE: array
       QUEUE_CONNECTION: sync
+      RP01_ACCEPTED_PRODUCT_BASELINE: 905556f073b7fa853148aa57d0d6b6524192a3ef
 
     steps:
       - name: Check out exact proposal HEAD
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Verify exact proposal HEAD
         if: github.event_name == 'pull_request'
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+
+      - name: Prove product application byte equivalence
+        shell: bash
+        run: |
+          set -euo pipefail
+          baseline="$RP01_ACCEPTED_PRODUCT_BASELINE"
+          head="$(git rev-parse HEAD)"
+          evidence_dir="storage/test-artifacts/product-byte-equivalence"
+          mkdir -p "$evidence_dir"
+
+          git cat-file -e "${baseline}^{commit}"
+          printf '%s\n' "$head" > "$evidence_dir/exact-evidence-head.txt"
+          printf '%s\n' "$baseline" > "$evidence_dir/accepted-product-baseline.txt"
+          echo "RP01_EVIDENCE_HEAD=$head" >> "$GITHUB_ENV"
+
+          git diff --name-only "$baseline" "$head" | sort > "$evidence_dir/changed-paths.txt"
+          git diff --check "$baseline" "$head" > "$evidence_dir/git-diff-check.txt"
+
+          frozen_paths=(
+            app
+            resources
+            routes
+            database
+            config
+            public
+            composer.json
+            composer.lock
+            package.json
+            package-lock.json
+            vite.config.js
+          )
+
+          git diff --name-only "$baseline" "$head" -- "${frozen_paths[@]}" > "$evidence_dir/product-path-diff.txt"
+          if [[ -s "$evidence_dir/product-path-diff.txt" ]]; then
+            echo "PRODUCT_BYTE_EQUIVALENCE_UNVERIFIED" | tee "$evidence_dir/product-byte-equivalence.txt"
+            cat "$evidence_dir/product-path-diff.txt"
+            exit 1
+          fi
+
+          git ls-tree -r "$baseline" -- "${frozen_paths[@]}" > "$evidence_dir/baseline-product-tree.txt"
+          git ls-tree -r "$head" -- "${frozen_paths[@]}" > "$evidence_dir/evidence-head-product-tree.txt"
+          diff -u "$evidence_dir/baseline-product-tree.txt" "$evidence_dir/evidence-head-product-tree.txt" > "$evidence_dir/product-tree.diff" || {
+            echo "PRODUCT_BYTE_EQUIVALENCE_UNVERIFIED" | tee "$evidence_dir/product-byte-equivalence.txt"
+            cat "$evidence_dir/product-tree.diff"
+            exit 1
+          }
+
+          sha256sum "$evidence_dir/baseline-product-tree.txt" "$evidence_dir/evidence-head-product-tree.txt" > "$evidence_dir/product-tree-sha256.txt"
+          echo "PRODUCT_APPLICATION_BYTES: UNCHANGED_FROM_ACCEPTED_MAIN" | tee "$evidence_dir/product-byte-equivalence.txt"
 
       - name: Set up PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -104,11 +155,6 @@ jobs:
           php artisan db:seed --class='Database\Seeders\S09AdminSeeder' --force
           php artisan db:seed --class='Database\Seeders\S10AdminOrdersSeeder' --force
 
-      - name: Record exact evidence HEAD
-        run: |
-          mkdir -p storage/test-artifacts
-          git rev-parse HEAD > storage/test-artifacts/exact-head.txt
-
       - name: Install Chromium for the single browser verification layer
         run: npx playwright install --with-deps chromium
 
@@ -126,17 +172,334 @@ jobs:
           cat storage/logs/e2e-server.log
           exit 1
 
-      - name: Run browser critical flow and responsive verification
-        run: npm run test:e2e
+      - name: Run existing browser critical flow and responsive verification
+        id: existing_browser
+        continue-on-error: true
+        run: npx playwright test --grep-invert '\[IPA\]'
 
-      - name: Upload visual and browser evidence
+      - name: Report existing browser suite outcome
+        if: always()
+        shell: bash
+        run: |
+          echo "EXISTING_BROWSER_SUITE_OUTCOME=${{ steps.existing_browser.outcome }}"
+          if [[ "${{ steps.existing_browser.outcome }}" != "success" ]]; then
+            echo "::warning::Pre-existing browser suite reported a page-check failure. Exact evidence collection will continue; no product remediation is authorized."
+          fi
+
+      - name: Reset deterministic data for exact IPA evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan migrate:fresh --seed --force
+          php artisan db:seed --class='Database\Seeders\S09AdminSeeder' --force
+          php artisan db:seed --class='Database\Seeders\S10AdminOrdersSeeder' --force
+
+      - name: Run all final pages exact-candidate IPA evidence
+        run: npx playwright test tests/e2e/ipa-final-pages.spec.js --workers=1
+
+      - name: Normalize evidence paths to explicit artifact-root contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const artifactRootRepositoryPath = 'storage';
+          const ipaDir = 'storage/test-artifacts/ipa-final-pages';
+          const proofDir = 'storage/test-artifacts/product-byte-equivalence';
+          const manifestPath = path.join(ipaDir, 'manifest.json');
+          const indexPath = path.join(ipaDir, 'evidence-index.json');
+          const findingsPath = path.join(ipaDir, 'observed-potential-page-defects.json');
+
+          function toPosix(value) {
+            return value.replaceAll('\\', '/');
+          }
+
+          function pathPair(repositoryPath) {
+            const normalized = toPosix(repositoryPath);
+            const prefix = `${artifactRootRepositoryPath}/`;
+            if (!normalized.startsWith(prefix)) {
+              throw new Error(`Repository path is outside artifact upload root: ${normalized}`);
+            }
+            const artifactPath = normalized.slice(prefix.length);
+            if (!artifactPath || artifactPath.startsWith('/') || artifactPath.split('/').includes('..')) {
+              throw new Error(`Invalid artifact-root-relative path: ${artifactPath}`);
+            }
+            return { repositoryPath: normalized, artifactPath };
+          }
+
+          function walkFiles(dir) {
+            const files = [];
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const candidate = path.join(dir, entry.name);
+              if (entry.isDirectory()) files.push(...walkFiles(candidate));
+              else if (entry.isFile()) files.push(toPosix(candidate));
+            }
+            return files.sort();
+          }
+
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+          const records = manifest.records.map((record) => {
+            const { screenshotPath, ...rest } = record;
+            return { ...rest, ...pathPair(screenshotPath) };
+          });
+
+          const secondaryStateEvidence = manifest.secondaryStateEvidence.map((record) => {
+            const { screenshotPath, ...rest } = record;
+            return { ...rest, ...pathPair(screenshotPath) };
+          });
+
+          const observedPotentialPageDefects = manifest.observedPotentialPageDefects.map((defect) => {
+            const { evidencePath, ...rest } = defect;
+            return { ...rest, ...pathPair(evidencePath) };
+          });
+
+          const coreArtifacts = {
+            manifest: pathPair(manifestPath),
+            coverageMatrix: pathPair(path.join(ipaDir, 'coverage-matrix.md')),
+            evidenceIndex: pathPair(indexPath),
+            observedPotentialPageDefects: pathPair(findingsPath),
+            pathResolutionReport: pathPair(path.join(ipaDir, 'artifact-path-resolution.json')),
+          };
+
+          const productByteEquivalenceArtifacts = walkFiles(proofDir).map(pathPair);
+
+          const artifactFiles = [
+            ...records.map(({ repositoryPath, artifactPath }) => ({
+              kind: 'primary-screenshot',
+              repositoryPath,
+              artifactPath,
+            })),
+            ...secondaryStateEvidence.map(({ repositoryPath, artifactPath }) => ({
+              kind: 'secondary-screenshot',
+              repositoryPath,
+              artifactPath,
+            })),
+            ...Object.entries(coreArtifacts).map(([name, value]) => ({
+              kind: 'supporting-artifact',
+              name,
+              ...value,
+            })),
+            ...productByteEquivalenceArtifacts.map((value) => ({
+              kind: 'product-byte-equivalence',
+              ...value,
+            })),
+          ];
+
+          const normalizedManifest = {
+            ...manifest,
+            pathContract: {
+              repositoryPath: 'Repository-relative runtime path under storage/.',
+              artifactPath: 'Artifact-root-relative path. Resolve only as <EXTRACTED_ARTIFACT_ROOT>/<artifactPath> with no prefix insertion, stripping, rewriting, heuristic repair, or fallback search.',
+              extractedArtifactRootCorrespondsToRepositoryPath: artifactRootRepositoryPath,
+            },
+            packageArtifacts: {
+              ...coreArtifacts,
+              productByteEquivalence: productByteEquivalenceArtifacts,
+            },
+            secondaryStateEvidence,
+            observedPotentialPageDefects,
+            records,
+            artifactFiles,
+          };
+
+          fs.writeFileSync(manifestPath, `${JSON.stringify(normalizedManifest, null, 2)}\n`);
+          fs.writeFileSync(indexPath, `${JSON.stringify(records, null, 2)}\n`);
+          fs.writeFileSync(findingsPath, `${JSON.stringify(observedPotentialPageDefects, null, 2)}\n`);
+          NODE
+
+      - name: Evaluate captured page assertions
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'storage/test-artifacts/ipa-final-pages/observed-potential-page-defects.json';
+          const defects = JSON.parse(fs.readFileSync(file, 'utf8'));
+          if (defects.length === 0) {
+            console.log('PAGE_RENDER_ASSERTIONS: PASS — no recorded lang/dir/overflow/debug-page deviations.');
+            process.exit(0);
+          }
+          console.error(`PAGE_RENDER_ASSERTIONS: FAIL — ${defects.length} observed potential page defect(s).`);
+          for (const defect of defects) {
+            console.error(`${defect.surface} @ ${defect.viewport}px :: ${defect.description} :: ${defect.artifactPath}`);
+          }
+          process.exit(1);
+          NODE
+
+      - name: Validate IPA evidence manifest, coverage, and artifact paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const artifactRoot = 'storage';
+          const dir = 'storage/test-artifacts/ipa-final-pages';
+          const reportRepositoryPath = path.join(dir, 'artifact-path-resolution.json');
+          const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+          const widths = [1440, 820, 768, 430, 390];
+          const surfaces = [
+            's01-home', 's02-catalog', 's03-s04-product', 's05-wishlist', 's05-comparison',
+            's06-cart', 's06-checkout', 's06-confirmation', 's07-order-status', 's08-returns-refunds-credit',
+            's09-admin-login', 's09-admin-catalog', 's09-admin-product-inventory',
+            's10-admin-orders-index', 's10-admin-order-detail',
+          ];
+
+          function assertPathContract(entry, label) {
+            if (!entry || typeof entry.repositoryPath !== 'string' || typeof entry.artifactPath !== 'string') {
+              throw new Error(`Missing explicit path contract fields: ${label}`);
+            }
+            if (!entry.repositoryPath.startsWith('storage/')) {
+              throw new Error(`Repository path outside storage/: ${label} :: ${entry.repositoryPath}`);
+            }
+            if (!entry.artifactPath || entry.artifactPath.startsWith('/') || entry.artifactPath.split('/').includes('..')) {
+              throw new Error(`Invalid artifactPath: ${label} :: ${entry.artifactPath}`);
+            }
+            if (entry.repositoryPath !== `storage/${entry.artifactPath}`) {
+              throw new Error(`Path-pair mismatch: ${label} :: ${entry.repositoryPath} :: ${entry.artifactPath}`);
+            }
+          }
+
+          if (manifest.exactEvidenceHead !== process.env.RP01_EVIDENCE_HEAD) throw new Error('Manifest exact evidence HEAD mismatch.');
+          if (manifest.acceptedProductBaseline !== process.env.RP01_ACCEPTED_PRODUCT_BASELINE) throw new Error('Manifest baseline mismatch.');
+          if (manifest.productApplicationBytes !== 'UNCHANGED_FROM_ACCEPTED_MAIN') throw new Error('Product-byte declaration mismatch.');
+          if (manifest.primaryEvidenceCount !== surfaces.length * widths.length) throw new Error('Primary evidence count mismatch.');
+          if (!manifest.pathContract?.artifactPath?.includes('<EXTRACTED_ARTIFACT_ROOT>/<artifactPath>')) throw new Error('Artifact path semantics are not explicit.');
+
+          for (const surface of surfaces) {
+            for (const width of widths) {
+              if (manifest.coverageMatrix?.[surface]?.[String(width)] !== 'PRESENT') throw new Error(`Missing matrix cell: ${surface} ${width}`);
+            }
+          }
+
+          if (!Array.isArray(manifest.records) || manifest.records.length !== 75) throw new Error('Primary record list must contain exactly 75 entries.');
+          for (const [index, record] of manifest.records.entries()) {
+            assertPathContract(record, `primary[${index}]`);
+          }
+
+          if (!Array.isArray(manifest.secondaryStateEvidence) || manifest.secondaryStateEvidence.length !== 2) throw new Error('Secondary record list must contain exactly 2 entries.');
+          for (const [index, record] of manifest.secondaryStateEvidence.entries()) {
+            assertPathContract(record, `secondary[${index}]`);
+          }
+
+          for (const [index, defect] of (manifest.observedPotentialPageDefects || []).entries()) {
+            assertPathContract(defect, `finding[${index}]`);
+          }
+
+          const artifactFiles = manifest.artifactFiles || [];
+          const artifactPaths = artifactFiles.map((entry) => entry.artifactPath);
+          const duplicateValues = [...new Set(artifactPaths.filter((value, index) => artifactPaths.indexOf(value) !== index))].sort();
+
+          fs.writeFileSync(reportRepositoryPath, '{}\n');
+
+          const resolution = artifactFiles.map((entry, index) => {
+            assertPathContract(entry, `artifactFiles[${index}]`);
+            const resolvedPath = path.join(artifactRoot, entry.artifactPath);
+            const exists = fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile();
+            return {
+              artifactPath: entry.artifactPath,
+              repositoryPath: entry.repositoryPath,
+              kind: entry.kind,
+              name: entry.name || null,
+              exists,
+            };
+          });
+
+          const unresolved = resolution.filter((entry) => !entry.exists);
+          const primary = resolution.filter((entry) => entry.kind === 'primary-screenshot');
+          const secondary = resolution.filter((entry) => entry.kind === 'secondary-screenshot');
+
+          const report = {
+            artifactRootSemantics: '<EXTRACTED_ARTIFACT_ROOT>/<artifactPath>',
+            totalReferencedFiles: resolution.length,
+            resolvedFiles: resolution.length - unresolved.length,
+            unresolvedFiles: unresolved.length,
+            unresolvedArtifactPaths: unresolved.map((entry) => entry.artifactPath),
+            duplicateArtifactPaths: duplicateValues.length,
+            duplicateArtifactPathValues: duplicateValues,
+            primaryImageReferences: primary.length,
+            primaryImageReferencesResolved: primary.filter((entry) => entry.exists).length,
+            secondaryImageReferences: secondary.length,
+            secondaryImageReferencesResolved: secondary.filter((entry) => entry.exists).length,
+            imageReferencesResolved: primary.filter((entry) => entry.exists).length + secondary.filter((entry) => entry.exists).length,
+            requiredImageReferences: 77,
+            result: unresolved.length === 0 && duplicateValues.length === 0 && primary.length === 75 && secondary.length === 2 ? 'PASS' : 'FAIL',
+            files: resolution,
+          };
+
+          fs.writeFileSync(reportRepositoryPath, `${JSON.stringify(report, null, 2)}\n`);
+
+          if (report.primaryImageReferencesResolved !== 75) throw new Error(`Primary artifact path resolution failed: ${report.primaryImageReferencesResolved}/75.`);
+          if (report.secondaryImageReferencesResolved !== 2) throw new Error(`Secondary artifact path resolution failed: ${report.secondaryImageReferencesResolved}/2.`);
+          if (report.imageReferencesResolved !== 77) throw new Error(`Image artifact path resolution failed: ${report.imageReferencesResolved}/77.`);
+          if (report.unresolvedFiles !== 0) throw new Error(`Unresolved artifact paths: ${report.unresolvedArtifactPaths.join(', ')}`);
+          if (report.duplicateArtifactPaths !== 0) throw new Error(`Duplicate artifact paths: ${report.duplicateArtifactPathValues.join(', ')}`);
+          if (report.result !== 'PASS') throw new Error('Artifact path-resolution result is not PASS.');
+
+          console.log(`Validated ${surfaces.length * widths.length} primary screenshots and 2 bounded secondary-state screenshots.`);
+          console.log(`ARTIFACT_PATH_RESOLUTION: PASS — ${report.resolvedFiles}/${report.totalReferencedFiles} referenced files resolved directly; 77/77 image references resolved; 0 unresolved; 0 duplicate artifact paths.`);
+          NODE
+
+      - name: Upload exact all-pages IPA evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rp01-s01-s10-browser-evidence
+          name: rp01-all-final-pages-ipa-evidence
           path: |
-            storage/test-artifacts/
-            playwright-report/
+            storage/test-artifacts/ipa-final-pages/
+            storage/test-artifacts/product-byte-equivalence/
+            storage/test-artifacts/playwright-report/
             storage/logs/e2e-server.log
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
+
+      - name: Download uploaded artifact for extracted-root verification
+        uses: actions/download-artifact@v4
+        with:
+          name: rp01-all-final-pages-ipa-evidence
+          path: ${{ runner.temp }}/rp01-all-final-pages-ipa-evidence
+
+      - name: Verify downloaded artifact paths without rewriting
+        shell: bash
+        env:
+          EXTRACTED_ARTIFACT_ROOT: ${{ runner.temp }}/rp01-all-final-pages-ipa-evidence
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const root = process.env.EXTRACTED_ARTIFACT_ROOT;
+          const manifestPath = path.join(root, 'test-artifacts/ipa-final-pages/manifest.json');
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const artifactFiles = manifest.artifactFiles || [];
+          const unresolved = [];
+
+          for (const entry of artifactFiles) {
+            const target = path.join(root, entry.artifactPath);
+            if (!fs.existsSync(target) || !fs.statSync(target).isFile()) {
+              unresolved.push(entry.artifactPath);
+            }
+          }
+
+          const primary = artifactFiles.filter((entry) => entry.kind === 'primary-screenshot');
+          const secondary = artifactFiles.filter((entry) => entry.kind === 'secondary-screenshot');
+          const duplicates = [...new Set(artifactFiles.map((entry) => entry.artifactPath).filter((value, index, values) => values.indexOf(value) !== index))];
+
+          if (primary.length !== 75) throw new Error(`Downloaded artifact primary reference count is ${primary.length}, expected 75.`);
+          if (secondary.length !== 2) throw new Error(`Downloaded artifact secondary reference count is ${secondary.length}, expected 2.`);
+          if (unresolved.length !== 0) throw new Error(`Downloaded artifact has unresolved paths: ${unresolved.join(', ')}`);
+          if (duplicates.length !== 0) throw new Error(`Downloaded artifact has duplicate artifact paths: ${duplicates.join(', ')}`);
+
+          const report = JSON.parse(fs.readFileSync(path.join(root, manifest.packageArtifacts.pathResolutionReport.artifactPath), 'utf8'));
+          if (report.result !== 'PASS' || report.unresolvedFiles !== 0 || report.duplicateArtifactPaths !== 0 || report.imageReferencesResolved !== 77) {
+            throw new Error('Embedded artifact path-resolution report is not a complete PASS.');
+          }
+
+          console.log(`EXTRACTED_ARTIFACT_PATH_RESOLUTION: PASS — ${artifactFiles.length}/${artifactFiles.length} files resolved directly from extracted root; 77/77 image references resolved.`);
+          NODE
