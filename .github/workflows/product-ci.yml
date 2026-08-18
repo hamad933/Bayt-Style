@@ -12,7 +12,7 @@ jobs:
   product-verification:
     name: Laravel product verification
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       APP_ENV: testing
       APP_URL: http://127.0.0.1:8000
@@ -25,16 +25,67 @@ jobs:
       SESSION_DRIVER: file
       CACHE_STORE: array
       QUEUE_CONNECTION: sync
+      RP01_ACCEPTED_PRODUCT_BASELINE: 905556f073b7fa853148aa57d0d6b6524192a3ef
 
     steps:
       - name: Check out exact proposal HEAD
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Verify exact proposal HEAD
         if: github.event_name == 'pull_request'
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+
+      - name: Prove product application byte equivalence
+        shell: bash
+        run: |
+          set -euo pipefail
+          baseline="$RP01_ACCEPTED_PRODUCT_BASELINE"
+          head="$(git rev-parse HEAD)"
+          evidence_dir="storage/test-artifacts/product-byte-equivalence"
+          mkdir -p "$evidence_dir"
+
+          git cat-file -e "${baseline}^{commit}"
+          printf '%s\n' "$head" > "$evidence_dir/exact-evidence-head.txt"
+          printf '%s\n' "$baseline" > "$evidence_dir/accepted-product-baseline.txt"
+          echo "RP01_EVIDENCE_HEAD=$head" >> "$GITHUB_ENV"
+
+          git diff --name-only "$baseline" "$head" | sort > "$evidence_dir/changed-paths.txt"
+          git diff --check "$baseline" "$head" > "$evidence_dir/git-diff-check.txt"
+
+          frozen_paths=(
+            app
+            resources
+            routes
+            database
+            config
+            public
+            composer.json
+            composer.lock
+            package.json
+            package-lock.json
+            vite.config.js
+          )
+
+          git diff --name-only "$baseline" "$head" -- "${frozen_paths[@]}" > "$evidence_dir/product-path-diff.txt"
+          if [[ -s "$evidence_dir/product-path-diff.txt" ]]; then
+            echo "PRODUCT_BYTE_EQUIVALENCE_UNVERIFIED" | tee "$evidence_dir/product-byte-equivalence.txt"
+            cat "$evidence_dir/product-path-diff.txt"
+            exit 1
+          fi
+
+          git ls-tree -r "$baseline" -- "${frozen_paths[@]}" > "$evidence_dir/baseline-product-tree.txt"
+          git ls-tree -r "$head" -- "${frozen_paths[@]}" > "$evidence_dir/evidence-head-product-tree.txt"
+          diff -u "$evidence_dir/baseline-product-tree.txt" "$evidence_dir/evidence-head-product-tree.txt" > "$evidence_dir/product-tree.diff" || {
+            echo "PRODUCT_BYTE_EQUIVALENCE_UNVERIFIED" | tee "$evidence_dir/product-byte-equivalence.txt"
+            cat "$evidence_dir/product-tree.diff"
+            exit 1
+          }
+
+          sha256sum "$evidence_dir/baseline-product-tree.txt" "$evidence_dir/evidence-head-product-tree.txt" > "$evidence_dir/product-tree-sha256.txt"
+          echo "PRODUCT_APPLICATION_BYTES: UNCHANGED_FROM_ACCEPTED_MAIN" | tee "$evidence_dir/product-byte-equivalence.txt"
 
       - name: Set up PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -104,11 +155,6 @@ jobs:
           php artisan db:seed --class='Database\Seeders\S09AdminSeeder' --force
           php artisan db:seed --class='Database\Seeders\S10AdminOrdersSeeder' --force
 
-      - name: Record exact evidence HEAD
-        run: |
-          mkdir -p storage/test-artifacts
-          git rev-parse HEAD > storage/test-artifacts/exact-head.txt
-
       - name: Install Chromium for the single browser verification layer
         run: npx playwright install --with-deps chromium
 
@@ -126,17 +172,63 @@ jobs:
           cat storage/logs/e2e-server.log
           exit 1
 
-      - name: Run browser critical flow and responsive verification
-        run: npm run test:e2e
+      - name: Run existing browser critical flow and responsive verification
+        run: npx playwright test --grep-invert '\[IPA\]'
 
-      - name: Upload visual and browser evidence
+      - name: Reset deterministic data for exact IPA evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan migrate:fresh --seed --force
+          php artisan db:seed --class='Database\Seeders\S09AdminSeeder' --force
+          php artisan db:seed --class='Database\Seeders\S10AdminOrdersSeeder' --force
+
+      - name: Run all final pages exact-candidate IPA evidence
+        run: npx playwright test tests/e2e/ipa-final-pages.spec.js --workers=1
+
+      - name: Validate IPA evidence manifest and coverage matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = 'storage/test-artifacts/ipa-final-pages';
+          const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+          const widths = [1440, 820, 768, 430, 390];
+          const surfaces = [
+            's01-home', 's02-catalog', 's03-s04-product', 's05-wishlist', 's05-comparison',
+            's06-cart', 's06-checkout', 's06-confirmation', 's07-order-status', 's08-returns-refunds-credit',
+            's09-admin-login', 's09-admin-catalog', 's09-admin-product-inventory',
+            's10-admin-orders-index', 's10-admin-order-detail',
+          ];
+          if (manifest.exactEvidenceHead !== process.env.RP01_EVIDENCE_HEAD) throw new Error('Manifest exact evidence HEAD mismatch.');
+          if (manifest.acceptedProductBaseline !== process.env.RP01_ACCEPTED_PRODUCT_BASELINE) throw new Error('Manifest baseline mismatch.');
+          if (manifest.productApplicationBytes !== 'UNCHANGED_FROM_ACCEPTED_MAIN') throw new Error('Product-byte declaration mismatch.');
+          if (manifest.primaryEvidenceCount !== surfaces.length * widths.length) throw new Error('Primary evidence count mismatch.');
+          for (const surface of surfaces) {
+            for (const width of widths) {
+              if (manifest.coverageMatrix?.[surface]?.[String(width)] !== 'PRESENT') throw new Error(`Missing matrix cell: ${surface} ${width}`);
+              const file = path.join(dir, `${surface}-${width}.png`);
+              if (!fs.existsSync(file) || fs.statSync(file).size === 0) throw new Error(`Missing screenshot: ${file}`);
+            }
+          }
+          for (const secondary of ['secondary-catalog-no-results-1440.png', 'secondary-checkout-validation-errors-1440.png']) {
+            const file = path.join(dir, secondary);
+            if (!fs.existsSync(file) || fs.statSync(file).size === 0) throw new Error(`Missing secondary screenshot: ${file}`);
+          }
+          console.log(`Validated ${surfaces.length * widths.length} primary screenshots and 2 bounded secondary-state screenshots.`);
+          NODE
+
+      - name: Upload exact all-pages IPA evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rp01-s01-s10-browser-evidence
+          name: rp01-all-final-pages-ipa-evidence
           path: |
-            storage/test-artifacts/
-            playwright-report/
+            storage/test-artifacts/ipa-final-pages/
+            storage/test-artifacts/product-byte-equivalence/
+            storage/test-artifacts/playwright-report/
             storage/logs/e2e-server.log
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
