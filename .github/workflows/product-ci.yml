@@ -186,6 +186,26 @@ jobs:
       - name: Run all final pages exact-candidate IPA evidence
         run: npx playwright test tests/e2e/ipa-final-pages.spec.js --workers=1
 
+      - name: Evaluate captured page assertions
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'storage/test-artifacts/ipa-final-pages/observed-potential-page-defects.json';
+          const defects = JSON.parse(fs.readFileSync(file, 'utf8'));
+          if (defects.length === 0) {
+            console.log('PAGE_RENDER_ASSERTIONS: PASS — no recorded lang/dir/overflow/debug-page deviations.');
+            process.exit(0);
+          }
+          console.error(`PAGE_RENDER_ASSERTIONS: FAIL — ${defects.length} observed potential page defect(s).`);
+          for (const defect of defects) {
+            console.error(`${defect.surface} @ ${defect.viewport}px :: ${defect.description} :: ${defect.evidencePath}`);
+          }
+          process.exit(1);
+          NODE
+
       - name: Validate IPA evidence manifest and coverage matrix
         shell: bash
         run: |
