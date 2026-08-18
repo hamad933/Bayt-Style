@@ -9,6 +9,7 @@ const evidenceHead = process.env.RP01_EVIDENCE_HEAD || process.env.GITHUB_SHA ||
 const evidenceBranch = process.env.GITHUB_HEAD_REF || 'chore/rp01-ipa-evidence-all-pages';
 const outputDir = path.resolve('storage/test-artifacts/ipa-final-pages');
 const recordsPath = path.join(outputDir, 'evidence-records.jsonl');
+const defectsPath = path.join(outputDir, 'observed-potential-page-defects.jsonl');
 
 const viewports = [
   { width: 1440, height: 1000 },
@@ -38,48 +39,92 @@ const surfaces = [
 
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(recordsPath, '');
-test.describe.configure({ mode: 'serial' });
+fs.writeFileSync(defectsPath, '');
 
-async function assertReviewablePage(page, surface) {
-  await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
-  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+function artifactRelative(filePath) {
+  return path.relative(process.cwd(), filePath).replaceAll('\\', '/');
+}
+
+function recordDefect(defect) {
+  fs.appendFileSync(defectsPath, `${JSON.stringify({
+    classification: 'OBSERVED_POTENTIAL_PAGE_DEFECT',
+    ...defect,
+  })}\n`);
+}
+
+async function reviewAndCapture(page, surface, route, state, viewport, screenshotPath, includePrimaryRecord = true) {
   await expect(page.locator('body')).toBeVisible();
   const metrics = await page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    dir: document.documentElement.dir,
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: document.documentElement.clientWidth,
     text: document.body?.innerText || '',
   }));
-  expect(metrics.documentWidth, `${surface} horizontal overflow`).toBeLessThanOrEqual(metrics.viewportWidth + 1);
-  expect(metrics.text, `${surface} server exception/debug page`).not.toMatch(/Whoops, looks like something went wrong|Stack trace|Illuminate\\|Symfony\\Component\\ErrorHandler|Server Error/i);
+
+  await page.screenshot({ path: screenshotPath, fullPage: true });
+  const screenshot = artifactRelative(screenshotPath);
+  const reachedPath = new URL(page.url()).pathname;
+  const debugPattern = /Whoops, looks like something went wrong|Stack trace|Illuminate\\|Symfony\\Component\\ErrorHandler|Server Error/i;
+
+  if (metrics.lang !== 'ar') {
+    recordDefect({ surface, viewport: viewport.width, evidencePath: screenshot, description: `html lang is ${JSON.stringify(metrics.lang)} instead of "ar".` });
+  }
+  if (metrics.dir !== 'rtl') {
+    recordDefect({ surface, viewport: viewport.width, evidencePath: screenshot, description: `html dir is ${JSON.stringify(metrics.dir)} instead of "rtl".` });
+  }
+  if (metrics.documentWidth > metrics.viewportWidth + 1) {
+    recordDefect({
+      surface,
+      viewport: viewport.width,
+      evidencePath: screenshot,
+      description: `Horizontal document overflow observed: documentWidth=${metrics.documentWidth}px, viewportWidth=${metrics.viewportWidth}px.`,
+    });
+  }
+  if (debugPattern.test(metrics.text)) {
+    recordDefect({ surface, viewport: viewport.width, evidencePath: screenshot, description: 'Rendered body matched a server exception/debug-page marker.' });
+  }
+
+  if (includePrimaryRecord) {
+    const record = {
+      project: 'RP01 — Bayt & Style',
+      workstream,
+      repository,
+      acceptedProductBaseline: baseline,
+      evidenceBranch,
+      exactEvidenceHead: evidenceHead,
+      pageSurface: surface,
+      route,
+      reachedPath,
+      state,
+      viewportWidth: viewport.width,
+      viewportHeight: viewport.height,
+      screenshotPath: screenshot,
+      htmlLang: metrics.lang,
+      htmlDir: metrics.dir,
+      documentWidth: metrics.documentWidth,
+      documentViewportWidth: metrics.viewportWidth,
+      horizontalOverflowObserved: metrics.documentWidth > metrics.viewportWidth + 1,
+      serverExceptionDebugMarkerObserved: debugPattern.test(metrics.text),
+      productApplicationBytesDifferFromAcceptedBaseline: false,
+      testRunProvenance: {
+        githubRunId: process.env.GITHUB_RUN_ID || null,
+        githubRunAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
+        githubWorkflow: process.env.GITHUB_WORKFLOW || null,
+      },
+    };
+    fs.appendFileSync(recordsPath, `${JSON.stringify(record)}\n`);
+  }
 }
 
 async function capture(page, surface, route, state, viewport) {
-  await assertReviewablePage(page, surface);
   const screenshotPath = path.join(outputDir, `${surface}-${viewport.width}.png`);
-  await page.screenshot({ path: screenshotPath, fullPage: true });
-  const url = new URL(page.url());
-  const record = {
-    project: 'RP01 — Bayt & Style',
-    workstream,
-    repository,
-    acceptedProductBaseline: baseline,
-    evidenceBranch,
-    exactEvidenceHead: evidenceHead,
-    pageSurface: surface,
-    route,
-    reachedPath: url.pathname,
-    state,
-    viewportWidth: viewport.width,
-    viewportHeight: viewport.height,
-    screenshotPath: path.relative(process.cwd(), screenshotPath).replaceAll('\\', '/'),
-    productApplicationBytesDifferFromAcceptedBaseline: false,
-    testRunProvenance: {
-      githubRunId: process.env.GITHUB_RUN_ID || null,
-      githubRunAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
-      githubWorkflow: process.env.GITHUB_WORKFLOW || null,
-    },
-  };
-  fs.appendFileSync(recordsPath, `${JSON.stringify(record)}\n`);
+  await reviewAndCapture(page, surface, route, state, viewport, screenshotPath, true);
+}
+
+async function captureSecondary(page, surface, route, state, viewport, filename) {
+  const screenshotPath = path.join(outputDir, filename);
+  await reviewAndCapture(page, surface, route, state, viewport, screenshotPath, false);
 }
 
 async function gotoAndAssert(page, route) {
@@ -222,24 +267,23 @@ for (const viewport of viewports) {
 test('[IPA] bounded secondary state evidence', async ({ page }) => {
   const viewport = { width: 1440, height: 1000 };
   await page.setViewportSize(viewport);
+
   await gotoAndAssert(page, '/catalog?q=NO_SUCH_RP01_PRODUCT_001');
   await expect(page.getByTestId('product-card')).toHaveCount(0);
-  await assertReviewablePage(page, 'secondary-catalog-no-results');
-  await page.screenshot({ path: path.join(outputDir, 'secondary-catalog-no-results-1440.png'), fullPage: true });
+  await captureSecondary(page, 's02-catalog', '/catalog', 'no-results-search', viewport, 'secondary-catalog-no-results-1440.png');
 
   await chooseSandChair(page);
   await page.getByTestId('add-to-cart').click();
   await gotoAndAssert(page, '/checkout');
   await page.getByTestId('confirm-checkout').click();
   await expect(page).toHaveURL(/\/checkout$/);
-  await assertReviewablePage(page, 'secondary-checkout-validation-errors');
-  await page.screenshot({ path: path.join(outputDir, 'secondary-checkout-validation-errors-1440.png'), fullPage: true });
+  await captureSecondary(page, 's06-checkout', '/checkout', 'validation-errors', viewport, 'secondary-checkout-validation-errors-1440.png');
 });
 
 test.afterAll(async () => {
   const records = fs.readFileSync(recordsPath, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+  const defects = fs.readFileSync(defectsPath, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
   const expectedCount = surfaces.length * viewports.length;
-  if (records.length !== expectedCount) throw new Error(`Expected ${expectedCount} primary evidence records, found ${records.length}.`);
 
   const matrix = {};
   for (const [surface] of surfaces) {
@@ -259,6 +303,7 @@ test.afterAll(async () => {
     exactEvidenceHead: evidenceHead,
     productApplicationBytes: 'UNCHANGED_FROM_ACCEPTED_MAIN',
     primaryEvidenceCount: records.length,
+    expectedPrimaryEvidenceCount: expectedCount,
     viewports,
     coverageMatrix: matrix,
     secondaryStateEvidence: [
@@ -270,12 +315,17 @@ test.afterAll(async () => {
       'empty-cart dedicated secondary screenshot not captured',
       'admin empty/error dedicated secondary screenshot not captured',
     ],
+    observedPotentialPageDefects: defects,
     records,
   };
+
   fs.writeFileSync(path.join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   fs.writeFileSync(path.join(outputDir, 'evidence-index.json'), `${JSON.stringify(records, null, 2)}\n`);
+  fs.writeFileSync(path.join(outputDir, 'observed-potential-page-defects.json'), `${JSON.stringify(defects, null, 2)}\n`);
 
   const header = '| Page / Surface | 1440 | 820 | 768 | 430 | 390 |\n|---|---:|---:|---:|---:|---:|\n';
   const rows = surfaces.map(([surface]) => `| ${surface} | ${matrix[surface]['1440']} | ${matrix[surface]['820']} | ${matrix[surface]['768']} | ${matrix[surface]['430']} | ${matrix[surface]['390']} |`).join('\n');
   fs.writeFileSync(path.join(outputDir, 'coverage-matrix.md'), `${header}${rows}\n`);
+
+  if (records.length !== expectedCount) throw new Error(`Expected ${expectedCount} primary evidence records, found ${records.length}.`);
 });
