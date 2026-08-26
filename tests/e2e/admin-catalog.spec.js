@@ -41,14 +41,18 @@ async function capture(page, name) {
 for (const viewport of [
   { name: '1440', width: 1440, height: 1000 },
   { name: '820', width: 820, height: 1000 },
+  { name: '768', width: 768, height: 1024 },
+  { name: '430', width: 430, height: 932 },
   { name: '390', width: 390, height: 844 },
 ]) {
   test(`S09 Admin Catalog and Inventory is RTL and overflow-safe at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await login(page);
+    await assertNoPageOverflow(page);
 
     await page.getByLabel('بحث').fill('BAS-CHAIR-SAND-01');
     await page.getByRole('button', { name: 'تطبيق' }).click();
+    await assertNoPageOverflow(page);
 
     const matchedRow = page.getByRole('row').filter({ hasText: 'BAS-CHAIR-SAND-01' });
     await expect(matchedRow).toHaveCount(1);
