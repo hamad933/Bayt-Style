@@ -43,8 +43,8 @@
         <span class="s10-count">{{ $orders->total() }} طلب</span>
     </div>
 
-    <div class="s10-table-scroll" role="region" aria-label="جدول الطلبات" tabindex="0">
-        <table class="s10-table">
+    <div class="s10-table-scroll" role="region" aria-label="جدول الطلبات" tabindex="0" style="width: 100%; min-width: 0; contain: inline-size; direction: ltr;">
+        <table class="s10-table" style="direction: rtl;">
             <thead>
             <tr>
                 <th>الطلب</th>
