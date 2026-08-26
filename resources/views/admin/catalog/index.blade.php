@@ -35,8 +35,8 @@
     @endif
 </form>
 
-<div class="admin-table-wrap" data-testid="catalog-table-wrap" style="width: 100%; min-width: 0;">
-    <table class="admin-table">
+<div class="admin-table-wrap" data-testid="catalog-table-wrap" style="width: 100%; min-width: 0; contain: inline-size; direction: ltr;">
+    <table class="admin-table" style="direction: rtl;">
         <thead>
         <tr>
             <th>المنتج</th>
