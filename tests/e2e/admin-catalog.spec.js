@@ -22,14 +22,35 @@ async function login(page) {
 }
 
 async function assertNoPageOverflow(page) {
-  const metrics = await page.evaluate(() => ({
-    direction: document.documentElement.dir,
-    documentWidth: document.documentElement.scrollWidth,
-    viewportWidth: document.documentElement.clientWidth,
-  }));
+  const metrics = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const offenders = [...document.querySelectorAll('body *')]
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          tag: element.tagName.toLowerCase(),
+          className: typeof element.className === 'string' ? element.className : '',
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+        };
+      })
+      .filter((item) => item.left < -1 || item.right > viewportWidth + 1)
+      .sort((a, b) => (Math.max(-a.left, a.right - viewportWidth) - Math.max(-b.left, b.right - viewportWidth)))
+      .slice(-12);
+
+    return {
+      direction: document.documentElement.dir,
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth,
+      offenders,
+    };
+  });
 
   expect(metrics.direction).toBe('rtl');
-  expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+  expect(metrics.documentWidth, JSON.stringify(metrics, null, 2)).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
 async function capture(page, name) {
