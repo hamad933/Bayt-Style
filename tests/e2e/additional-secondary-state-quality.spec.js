@@ -68,7 +68,7 @@ test('[QUALITY][SECONDARY] admin login failure is explicit and runtime-clean', a
   await expect(page).toHaveURL(/\/admin\/login$/);
   const alert = page.getByRole('alert');
   await expect(alert).toBeVisible();
-  await expect(alert).not.toContainText('validation.');
+  await expect(alert).toHaveText('بيانات الدخول غير صحيحة.');
   await assertNoPageOverflow(page);
   expect(runtimeFailures).toEqual([]);
 
@@ -83,8 +83,13 @@ test('[QUALITY][SECONDARY] admin catalog no-results state is explicit on mobile'
   await page.getByLabel('بحث').fill('NO_SUCH_RP01_ADMIN_PRODUCT_001');
   await page.getByRole('button', { name: 'تطبيق' }).click();
   await expect(page).toHaveURL(/\/admin\/catalog\?/);
-  await expect(page.locator('.admin-empty')).toHaveText('لا توجد نتائج مطابقة.');
+
+  const emptyState = page.getByRole('status');
+  await expect(emptyState).toBeVisible();
+  await expect(emptyState.getByRole('heading', { name: 'لا توجد نتائج مطابقة.' })).toBeVisible();
+  await expect(emptyState).toContainText('امسح الفلاتر');
   await expect(page.getByLabel('عدد المنتجات')).toContainText('0');
+  await expect(page.getByTestId('catalog-table-wrap')).toHaveCount(0);
   await assertNoPageOverflow(page);
   expect(runtimeFailures).toEqual([]);
 
