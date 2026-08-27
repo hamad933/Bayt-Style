@@ -142,6 +142,9 @@ jobs:
       - name: Run browser critical flow and responsive verification
         run: npm run test:e2e
 
+      - name: Assemble canonical truthful secondary evidence
+        run: node scripts/assemble-rp01-secondary-evidence.mjs
+
       - name: Upload visual and browser evidence
         if: always()
         uses: actions/upload-artifact@v4
