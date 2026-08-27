@@ -151,3 +151,23 @@ test('[QUALITY] mobile menu restores trigger focus after Escape', async ({ page 
   await expect(menuTrigger).toBeFocused();
   expect(runtimeFailures, 'mobile menu runtime failures').toEqual([]);
 });
+
+test('[QUALITY] mobile login returns focus to visible menu trigger', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const runtimeFailures = watchRuntime(page);
+  await page.goto('/');
+
+  const menuTrigger = page.getByRole('button', { name: 'فتح القائمة' });
+  await menuTrigger.click();
+  const mobileNav = page.locator('#mobile-nav');
+  const mobileLogin = mobileNav.getByRole('button', { name: 'تسجيل الدخول' });
+  await mobileLogin.click();
+
+  const loginDialog = page.getByRole('dialog', { name: 'تسجيل الدخول' });
+  await expect(mobileNav).toBeHidden();
+  await expect(loginDialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(loginDialog).toBeHidden();
+  await expect(menuTrigger).toBeFocused();
+  expect(runtimeFailures, 'mobile login runtime failures').toEqual([]);
+});
