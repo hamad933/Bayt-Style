@@ -72,7 +72,6 @@
 @media(max-width:900px){
   .s06-cart-grid,.checkout-form,.confirmation-grid{grid-template-columns:1fr}
   .s06-summary,.checkout-summary{position:static}
-  .checkout-summary{order:-1}
 }
 @media(max-width:600px){
   .s06-shell{width:min(100% - 28px,1180px);padding-top:30px}
