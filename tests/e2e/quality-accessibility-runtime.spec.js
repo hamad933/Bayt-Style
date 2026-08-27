@@ -123,5 +123,10 @@ test('[QUALITY] customer shell preserves keyboard entry and modal focus', async 
   await expect(cartDialog).toBeHidden();
   await expect(cartTrigger).toBeFocused();
 
+  const brand = page.locator('.brand');
+  await brand.focus();
+  await page.keyboard.press('Escape');
+  await expect(brand).toBeFocused();
+
   expect(runtimeFailures, 'customer shell runtime failures').toEqual([]);
 });
