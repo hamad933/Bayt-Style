@@ -17,7 +17,11 @@ async function login(page) {
 }
 
 async function assertNoPageOverflow(page) {
-  const metrics = await page.evaluate(() => ({ direction: document.documentElement.dir, documentWidth: document.documentElement.scrollWidth, viewportWidth: document.documentElement.clientWidth }));
+  const metrics = await page.evaluate(() => ({
+    direction: document.documentElement.dir,
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: document.documentElement.clientWidth,
+  }));
   expect(metrics.direction).toBe('rtl');
   expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
@@ -31,6 +35,8 @@ async function capture(page, name) {
 for (const viewport of [
   { name: '1440', width: 1440, height: 1000 },
   { name: '820', width: 820, height: 1000 },
+  { name: '768', width: 768, height: 1024 },
+  { name: '430', width: 430, height: 932 },
   { name: '390', width: 390, height: 844 },
 ]) {
   test(`S10 Admin Orders is RTL and overflow-safe at ${viewport.name}`, async ({ page }) => {

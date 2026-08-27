@@ -17,7 +17,11 @@ async function expectCustomerCopyClean(page) {
 async function chooseSandChair(page, quantity = 1) {
     await page.goto('/products/olive-velvet-lounge-chair');
     const colorSand = page.locator('[data-option-key="color"][data-option-value="رملي"]');
+    // The server-rendered control can be visible before Alpine has bound its
+    // reactive aria/click state. Wait for hydration before interacting.
+    await expect(colorSand).toHaveAttribute('aria-pressed', 'false');
     await colorSand.click();
+    await expect(colorSand).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('variant-sku')).toHaveText('BAS-CHAIR-SAND-01');
     for (let i = 1; i < quantity; i += 1) {
         await page.getByRole('button', { name: 'زيادة الكمية' }).click();
@@ -57,6 +61,9 @@ test('S01 → S06 critical customer flow preserves exact Variant and pending bou
     await expect(galleryPanels).toHaveCount(4);
     await expect(galleryPanels.nth(0)).toHaveAttribute('src', /chair-main\.jpg$/);
     const colorSand = page.locator('[data-option-key="color"][data-option-value="رملي"]');
+    // Wait for Alpine hydration before clicking so the test exercises the real
+    // reactive control rather than racing the server-rendered HTML.
+    await expect(colorSand).toHaveAttribute('aria-pressed', 'false');
     await colorSand.click();
     await expect(colorSand).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('variant-sku')).toHaveText('BAS-CHAIR-SAND-01');
