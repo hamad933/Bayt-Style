@@ -4,6 +4,10 @@ window.Alpine = Alpine;
 
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
 
+function focusOnNextPaint(selector) {
+    requestAnimationFrame(() => document.querySelector(selector)?.focus());
+}
+
 function trapFocusWithin(event, container) {
     const focusable = [...container.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
         .filter((element) => !element.disabled && element.offsetParent !== null);
@@ -84,7 +88,7 @@ document.addEventListener('alpine:init', () => {
         openDrawer() {
             this.trigger = document.activeElement;
             this.open = true;
-            queueMicrotask(() => document.querySelector('#mobile-filter-panel button')?.focus());
+            focusOnNextPaint('#mobile-filter-panel button');
         },
         closeDrawer() {
             this.open = false;
@@ -149,7 +153,7 @@ document.addEventListener('alpine:init', () => {
         async openDrawer() {
             this.trigger = document.activeElement;
             this.open = true;
-            queueMicrotask(() => document.querySelector('.cart-drawer button')?.focus());
+            focusOnNextPaint('#cart-drawer button');
             await this.refresh();
         },
         closeDrawer() {
@@ -161,8 +165,10 @@ document.addEventListener('alpine:init', () => {
 
     Alpine.data('appShell', () => ({
         closeTransientUi() {
-            Alpine.store('cart').closeDrawer();
-            Alpine.store('filters').closeDrawer();
+            const cart = Alpine.store('cart');
+            const filters = Alpine.store('filters');
+            if (cart.open) cart.closeDrawer();
+            if (filters.open) filters.closeDrawer();
             window.dispatchEvent(new CustomEvent('close-shell-ui'));
         },
     }));
