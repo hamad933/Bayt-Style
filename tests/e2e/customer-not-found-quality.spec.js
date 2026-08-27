@@ -9,10 +9,17 @@ function watchRuntime(page) {
   const failures = [];
   page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') failures.push(`console.error: ${message.text()}`);
+    if (message.type() !== 'error') return;
+
+    const text = message.text();
+    const isExpectedDocument404 = text === 'Failed to load resource: the server responded with a status of 404 (Not Found)';
+    if (!isExpectedDocument404) failures.push(`console.error: ${text}`);
   });
   page.on('response', (response) => {
     if (response.status() >= 500) failures.push(`HTTP ${response.status()}: ${response.url()}`);
+    if (response.status() === 404 && response.request().resourceType() !== 'document') {
+      failures.push(`unexpected HTTP 404: ${response.url()}`);
+    }
   });
   return failures;
 }
