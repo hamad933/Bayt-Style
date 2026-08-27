@@ -52,7 +52,7 @@ async function expectSecondarySemanticPage(page, route) {
 for (const route of [
     '/products/olive-velvet-lounge-chair',
     '/wishlist',
-    '/compare',
+    '/comparison',
 ]) {
     test(`[QUALITY][SEMANTICS][SECONDARY] ${route} keeps Arabic RTL landmarks and named visible controls`, async ({ page }) => {
         await page.setViewportSize({ width: 430, height: 932 });
