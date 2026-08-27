@@ -56,7 +56,7 @@
     </div>
 
     <div class="drawer-backdrop" x-show="$store.cart.open" x-transition.opacity x-cloak @click.self="$store.cart.closeDrawer()">
-        <aside id="cart-drawer" class="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" x-ref="cartDrawer" @keydown.tab="$store.cart.trapFocus($event, $el)">
+        <aside id="cart-drawer" class="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" x-ref="cartDrawer" x-effect="$store.cart.open && $nextTick(() => $refs.cartDrawer?.querySelector('button')?.focus())" @keydown.tab="$store.cart.trapFocus($event, $el)">
             <div class="drawer-head">
                 <div><p class="eyebrow">السلة</p><h2 id="cart-title">مختاراتك الحالية</h2></div>
                 <button type="button" @click="$store.cart.closeDrawer()" aria-label="إغلاق السلة">×</button>
