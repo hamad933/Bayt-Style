@@ -55,7 +55,9 @@ test('[QUALITY][419] expired customer session is Arabic, branded, recoverable an
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: 'انتهت جلسة التصفح' })).toBeVisible();
   await expect(page.getByText('انتهت صلاحية الجلسة قبل إكمال الإجراء المطلوب.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'إعادة تحميل الصفحة' })).toBeVisible();
+  const cartRecovery = page.getByRole('link', { name: 'العودة إلى السلة' });
+  await expect(cartRecovery).toBeVisible();
+  await expect(cartRecovery).toHaveAttribute('href', '/cart');
   await expect(page.getByRole('link', { name: 'العودة إلى الرئيسية' })).toBeVisible();
   await assertNoPageOverflow(page);
   expect(runtimeFailures).toEqual([]);
