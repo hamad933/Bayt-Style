@@ -19,6 +19,16 @@ const evidence = [
     screenshotPath: 'storage/test-artifacts/ipa-final-pages/secondary-catalog-no-results-1440.png',
   },
   {
+    surface: 's05-wishlist',
+    state: 'empty-wishlist',
+    screenshotPath: 'storage/test-artifacts/public-empty-quality/wishlist-empty-390.png',
+  },
+  {
+    surface: 's05-comparison',
+    state: 'empty-comparison',
+    screenshotPath: 'storage/test-artifacts/public-empty-quality/comparison-empty-390.png',
+  },
+  {
     surface: 's06-cart',
     state: 'empty-cart',
     screenshotPath: 'storage/test-artifacts/secondary-quality/empty-cart-390.png',
