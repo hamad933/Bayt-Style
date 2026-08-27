@@ -104,10 +104,19 @@ jobs:
           php artisan db:seed --class='Database\Seeders\S09AdminSeeder' --force
           php artisan db:seed --class='Database\Seeders\S10AdminOrdersSeeder' --force
 
-      - name: Record exact evidence HEAD
+      - name: Record exact evidence provenance
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p storage/test-artifacts
-          git rev-parse HEAD > storage/test-artifacts/exact-head.txt
+          exact_head="$(git rev-parse HEAD)"
+          printf '%s\n' "$exact_head" > storage/test-artifacts/exact-head.txt
+          echo "RP01_EVIDENCE_HEAD=$exact_head" >> "$GITHUB_ENV"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "RP01_ACCEPTED_PRODUCT_BASELINE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
+          else
+            echo "RP01_ACCEPTED_PRODUCT_BASELINE=$exact_head" >> "$GITHUB_ENV"
+          fi
 
       - name: Install Chromium for the single browser verification layer
         run: npx playwright install --with-deps chromium
