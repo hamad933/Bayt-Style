@@ -89,7 +89,7 @@
 </section>
 
 <div class="drawer-backdrop" x-show="$store.filters.open" x-transition.opacity x-cloak @click.self="$store.filters.closeDrawer()">
-    <aside id="mobile-filter-panel" class="filter-drawer" role="dialog" aria-modal="true" aria-labelledby="filter-drawer-title" @keydown.tab="$store.filters.trapFocus($event, $el)">
+    <aside id="mobile-filter-panel" class="filter-drawer" role="dialog" aria-modal="true" aria-labelledby="filter-drawer-title" x-ref="mobileFilterPanel" x-effect="$store.filters.open && $nextTick(() => $refs.mobileFilterPanel?.querySelector('button')?.focus())" @keydown.tab="$store.filters.trapFocus($event, $el)">
         <div class="drawer-head"><h2 id="filter-drawer-title">تصفية المنتجات</h2><button type="button" @click="$store.filters.closeDrawer()" aria-label="إغلاق">×</button></div>
         @include('partials.filters', ['drawerContext' => true])
     </aside>

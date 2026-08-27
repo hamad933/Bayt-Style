@@ -1,5 +1,5 @@
 @php($cartCount = collect(session('cart', []))->sum())
-<header class="site-header" x-data="headerShell" @close-shell-ui.window="mobileOpen = false; loginOpen = false">
+<header class="site-header" x-data="headerShell" @close-shell-ui.window="if (mobileOpen) { mobileOpen = false; $nextTick(() => $refs.mobileMenuTrigger && $refs.mobileMenuTrigger.focus()) } else { mobileOpen = false }; loginOpen = false">
     <div class="header-inner shell">
         <a href="{{ route('home') }}" class="brand" aria-label="بيت وأسلوب — الصفحة الرئيسية">
             <span class="brand-ar">بيت وأسلوب</span>
@@ -28,7 +28,7 @@
             <button class="icon-action" type="button" @click="$store.cart.openDrawer()" :aria-expanded="$store.cart.open.toString()" aria-controls="cart-drawer" aria-label="فتح السلة">
                 <span aria-hidden="true">◯</span><span class="cart-badge" x-text="$store.cart.count">{{ $cartCount }}</span>
             </button>
-            <button class="menu-toggle" type="button" @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen.toString()" aria-controls="mobile-nav" aria-label="فتح القائمة">☰</button>
+            <button class="menu-toggle" type="button" x-ref="mobileMenuTrigger" @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen.toString()" aria-controls="mobile-nav" aria-label="فتح القائمة">☰</button>
         </div>
     </div>
 
@@ -42,7 +42,7 @@
             <a href="{{ route('cart.index') }}">السلة <span x-text="'(' + $store.cart.count + ')' "></span></a>
             <a href="{{ route('home') }}#seasonal">الإلهام</a>
             <a href="#customer-service">خدمات العملاء</a>
-            <button type="button" @click="mobileOpen = false; loginOpen = true">تسجيل الدخول</button>
+            <button type="button" @click="$refs.mobileMenuTrigger.focus(); mobileOpen = false; loginOpen = true">تسجيل الدخول</button>
         </nav>
     </div>
 
@@ -56,7 +56,7 @@
     </div>
 
     <div class="drawer-backdrop" x-show="$store.cart.open" x-transition.opacity x-cloak @click.self="$store.cart.closeDrawer()">
-        <aside id="cart-drawer" class="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" x-ref="cartDrawer" @keydown.tab="$store.cart.trapFocus($event, $el)">
+        <aside id="cart-drawer" class="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" x-ref="cartDrawer" x-effect="$store.cart.open && $nextTick(() => $refs.cartDrawer?.querySelector('button')?.focus())" @keydown.tab="$store.cart.trapFocus($event, $el)">
             <div class="drawer-head">
                 <div><p class="eyebrow">السلة</p><h2 id="cart-title">مختاراتك الحالية</h2></div>
                 <button type="button" @click="$store.cart.closeDrawer()" aria-label="إغلاق السلة">×</button>
