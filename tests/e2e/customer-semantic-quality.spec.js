@@ -21,8 +21,8 @@ async function expectSemanticPage(page, route) {
     await expect(page.locator('main')).toBeVisible();
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('header')).toHaveCount(1);
-    await expect(page.locator('footer')).toHaveCount(1);
+    await expect(page.getByRole('banner')).toHaveCount(1);
+    await expect(page.getByRole('contentinfo')).toHaveCount(1);
 
     const unlabeledControls = await page.locator('input, select, textarea').evaluateAll((controls) => controls
         .filter((control) => !control.disabled && control.type !== 'hidden')
