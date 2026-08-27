@@ -56,16 +56,23 @@ async function startCsrfEnabledServer() {
   throw new Error('CSRF-enabled Laravel evidence server did not become ready.');
 }
 
-test('[QUALITY][419] expired customer session is Arabic, branded, recoverable and runtime-clean', async ({ page }) => {
+test('[QUALITY][419] token-mismatch fallback is Arabic, branded, recoverable and runtime-clean', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const runtimeFailures = watchRuntime(page);
   const { server, baseUrl } = await startCsrfEnabledServer();
 
   try {
+    // Establish a real non-testing Laravel session and retain its token.
     await page.goto(`${baseUrl}/cart`);
     const token = await page.locator('meta[name="csrf-token"]').getAttribute('content');
     expect(token).toBeTruthy();
 
+    // Move to the CI server on a different origin (same site, different port),
+    // then expire the shared browser session before posting the stale token back
+    // to the non-testing server. Laravel 13 accepts same-origin requests by
+    // origin verification, so a different origin is required to exercise the
+    // token-mismatch fallback truthfully.
+    await page.goto('/cart');
     await page.context().clearCookies();
 
     const [response] = await Promise.all([
