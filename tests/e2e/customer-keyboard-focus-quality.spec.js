@@ -68,6 +68,7 @@ test('[QUALITY][KEYBOARD] login dialog traps focus and returns it to the opener'
     await page.keyboard.press('Tab');
     await expect(close).toBeFocused();
     await expect(backdrop).toHaveCSS('opacity', '1');
+    await expect(dialog).toHaveCSS('color', 'rgb(39, 37, 31)');
 
     await page.screenshot({ path: path.join(outputDir, 'login-dialog-focus-1440.png'), fullPage: true });
     await page.keyboard.press('Escape');
@@ -99,6 +100,7 @@ test('[QUALITY][KEYBOARD] cart drawer traps empty-state focus and restores it on
     await page.keyboard.press('Shift+Tab');
     await expect(close).toBeFocused();
     await expect(backdrop).toHaveCSS('opacity', '1');
+    await expect(drawer).toHaveCSS('color', 'rgb(39, 37, 31)');
 
     await page.screenshot({ path: path.join(outputDir, 'cart-drawer-empty-focus-390.png'), fullPage: true });
     await page.keyboard.press('Escape');
