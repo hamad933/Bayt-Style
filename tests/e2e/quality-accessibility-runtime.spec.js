@@ -130,3 +130,24 @@ test('[QUALITY] customer shell preserves keyboard entry and modal focus', async 
 
   expect(runtimeFailures, 'customer shell runtime failures').toEqual([]);
 });
+
+test('[QUALITY] mobile menu restores trigger focus after Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const runtimeFailures = watchRuntime(page);
+  await page.goto('/');
+
+  const menuTrigger = page.getByRole('button', { name: 'فتح القائمة' });
+  await menuTrigger.focus();
+  await menuTrigger.click();
+  const mobileNav = page.locator('#mobile-nav');
+  await expect(mobileNav).toBeVisible();
+
+  const firstLink = mobileNav.getByRole('link', { name: 'المنتجات' });
+  await firstLink.focus();
+  await expect(firstLink).toBeFocused();
+  await page.keyboard.press('Escape');
+
+  await expect(mobileNav).toBeHidden();
+  await expect(menuTrigger).toBeFocused();
+  expect(runtimeFailures, 'mobile menu runtime failures').toEqual([]);
+});
