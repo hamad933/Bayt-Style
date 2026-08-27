@@ -4,12 +4,23 @@ import { expect, test } from '@playwright/test';
 
 const workstream = 'RP01-IPA-EVIDENCE-ALL-PAGES-001';
 const repository = 'hamad933/Bayt-Style';
-const baseline = process.env.RP01_ACCEPTED_PRODUCT_BASELINE || '905556f073b7fa853148aa57d0d6b6524192a3ef';
-const evidenceHead = process.env.RP01_EVIDENCE_HEAD || process.env.GITHUB_SHA || 'UNKNOWN';
-const evidenceBranch = process.env.GITHUB_HEAD_REF || 'chore/rp01-ipa-evidence-all-pages';
+const exactSha = /^[0-9a-f]{40}$/;
+const baseline = process.env.RP01_ACCEPTED_PRODUCT_BASELINE;
+const evidenceHead = process.env.RP01_EVIDENCE_HEAD || process.env.GITHUB_SHA;
+const evidenceBranch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME;
 const outputDir = path.resolve('storage/test-artifacts/ipa-final-pages');
 const recordsPath = path.join(outputDir, 'evidence-records.jsonl');
 const defectsPath = path.join(outputDir, 'observed-potential-page-defects.jsonl');
+
+if (!exactSha.test(baseline || '')) {
+  throw new Error('RP01_ACCEPTED_PRODUCT_BASELINE must explicitly bind a 40-hex SHA before IPA evidence generation.');
+}
+if (!exactSha.test(evidenceHead || '')) {
+  throw new Error('RP01_EVIDENCE_HEAD or GITHUB_SHA must explicitly bind a 40-hex SHA before IPA evidence generation.');
+}
+if (!evidenceBranch?.trim()) {
+  throw new Error('GITHUB_HEAD_REF or GITHUB_REF_NAME must explicitly bind the IPA evidence ref before evidence generation.');
+}
 
 const viewports = [
   { width: 1440, height: 1000 },
