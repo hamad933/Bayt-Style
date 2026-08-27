@@ -56,7 +56,31 @@ class CheckoutController extends Controller
             'payment_method' => ['required', Rule::in([config('commerce.checkout.payment_method_code')])],
             'terms' => ['accepted'],
         ], [
+            'required' => 'حقل :attribute مطلوب.',
+            'string' => 'يجب أن يكون :attribute نصًا.',
+            'min.string' => 'يجب ألا يقل :attribute عن :min أحرف.',
+            'max.string' => 'يجب ألا يزيد :attribute عن :max حرفًا.',
+            'email' => 'أدخل :attribute بصيغة صحيحة.',
+            'regex' => 'صيغة :attribute غير صحيحة.',
+            'uuid' => 'تعذّر التحقق من :attribute. أعد فتح صفحة إتمام الطلب وحاول مرة أخرى.',
+            'in' => 'القيمة المختارة في :attribute غير متاحة.',
             'terms.accepted' => 'يجب الموافقة صراحةً على الشروط المعروضة قبل تأكيد الطلب.',
+        ], [
+            'checkout_token' => 'جلسة إتمام الطلب',
+            'full_name' => 'الاسم الكامل',
+            'email' => 'البريد الإلكتروني',
+            'phone' => 'رقم الجوال',
+            'country_code' => 'البلد',
+            'region' => 'المنطقة / المحافظة',
+            'city' => 'المدينة',
+            'district' => 'الحي',
+            'address_line' => 'العنوان',
+            'building_unit' => 'المبنى / الوحدة',
+            'postal_code' => 'الرمز البريدي',
+            'delivery_notes' => 'ملاحظات التوصيل',
+            'shipping_method' => 'طريقة التوصيل',
+            'payment_method' => 'طريقة الدفع',
+            'terms' => 'الموافقة على الشروط',
         ]);
         $sessionToken = (string) $request->session()->get('checkout_token', '');
         if ($sessionToken === '' || ! hash_equals($sessionToken, (string) $validated['checkout_token'])) {
