@@ -34,7 +34,8 @@ test('[QUALITY][SECONDARY] empty cart is explicit and usable on mobile', async (
 
   expect(response).not.toBeNull();
   expect(response.status()).toBeLessThan(400);
-  await expect(page.getByRole('heading', { name: 'سلتك تنتظر أول قطعة' })).toBeVisible();
+  await expect(page.getByTestId('cart-empty')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ابدأ بقطعة تحبها' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'استكشف المنتجات' })).toBeVisible();
 
   const metrics = await page.evaluate(() => ({
@@ -47,7 +48,7 @@ test('[QUALITY][SECONDARY] empty cart is explicit and usable on mobile', async (
   await page.screenshot({ path: path.join(outputDir, 'empty-cart-390.png'), fullPage: true });
 });
 
-test('[QUALITY][SECONDARY] checkout captures real server validation errors', async ({ page }) => {
+test('[QUALITY][SECONDARY] checkout captures localized server validation errors', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const runtimeFailures = watchRuntime(page);
   await addConfiguredChair(page);
@@ -62,7 +63,10 @@ test('[QUALITY][SECONDARY] checkout captures real server validation errors', asy
   const errorSummary = page.getByTestId('checkout-errors');
   await expect(errorSummary).toBeVisible();
   await expect(errorSummary.getByRole('listitem')).not.toHaveCount(0);
-  await expect(errorSummary).toContainText('الاسم');
+  await expect(errorSummary).toContainText('الاسم الكامل');
+  await expect(errorSummary).toContainText('البريد الإلكتروني');
+  await expect(errorSummary).toContainText('رقم الجوال');
+  await expect(errorSummary).not.toContainText('validation.');
 
   const metrics = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
