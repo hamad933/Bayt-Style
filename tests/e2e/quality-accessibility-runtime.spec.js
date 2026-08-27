@@ -171,3 +171,20 @@ test('[QUALITY] mobile login returns focus to visible menu trigger', async ({ pa
   await expect(menuTrigger).toBeFocused();
   expect(runtimeFailures, 'mobile login runtime failures').toEqual([]);
 });
+
+test('[QUALITY] mobile filters focus close control and restore trigger', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const runtimeFailures = watchRuntime(page);
+  await page.goto('/catalog');
+
+  const filterTrigger = page.getByRole('button', { name: 'تصفية المنتجات' });
+  await filterTrigger.focus();
+  await filterTrigger.click();
+  const filterDialog = page.getByRole('dialog', { name: 'تصفية المنتجات' });
+  await expect(filterDialog).toBeVisible();
+  await expect(filterDialog.getByRole('button', { name: 'إغلاق' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(filterDialog).toBeHidden();
+  await expect(filterTrigger).toBeFocused();
+  expect(runtimeFailures, 'mobile filter runtime failures').toEqual([]);
+});
