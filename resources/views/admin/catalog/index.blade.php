@@ -35,44 +35,50 @@
     @endif
 </form>
 
-<div class="admin-table-wrap" data-testid="catalog-table-wrap" style="width: 100%; min-width: 0; contain: inline-size; direction: ltr;">
-    <table class="admin-table" style="direction: rtl;">
-        <thead>
-        <tr>
-            <th>المنتج</th>
-            <th>التصنيف</th>
-            <th>النشر</th>
-            <th>الخيارات</th>
-            <th>SKU</th>
-            <th>رصيد المخزون</th>
-            <th><span class="sr-only">إجراء</span></th>
-        </tr>
-        </thead>
-        <tbody>
-        @forelse ($products as $product)
-            @php($published = $product->published_at && $product->published_at->lte(now()))
+@if ($products->isEmpty())
+    <section class="admin-panel admin-empty" role="status" aria-live="polite" data-testid="catalog-empty-state">
+        <p class="admin-eyebrow">نتيجة البحث</p>
+        <h2>لا توجد نتائج مطابقة.</h2>
+        <p>جرّب تعديل عبارة البحث أو حالة النشر، أو امسح الفلاتر للعودة إلى الكتالوج الكامل.</p>
+    </section>
+@else
+    <div class="admin-table-wrap" data-testid="catalog-table-wrap" style="width: 100%; min-width: 0; contain: inline-size; direction: ltr;">
+        <table class="admin-table" style="direction: rtl;">
+            <thead>
             <tr>
-                <td>
-                    <strong class="admin-table__primary">{{ $product->name_ar }}</strong>
-                    <span class="admin-table__secondary" dir="ltr">{{ $product->slug }}</span>
-                </td>
-                <td>{{ $product->category?->name_ar ?? '—' }}</td>
-                <td><span class="admin-status {{ $published ? 'is-positive' : 'is-muted' }}">{{ $published ? 'منشور' : 'مسودة' }}</span></td>
-                <td>{{ $product->variants_count }}</td>
-                <td>
-                    @foreach ($product->variants->sortByDesc('is_default') as $variant)
-                        <span class="admin-table__primary" dir="ltr">{{ $variant->sku }}</span>
-                    @endforeach
-                </td>
-                <td>{{ number_format((int) ($product->variants_sum_inventory_quantity ?? 0)) }}</td>
-                <td><a class="admin-row-action" href="{{ route('admin.catalog.edit', $product) }}">إدارة</a></td>
+                <th>المنتج</th>
+                <th>التصنيف</th>
+                <th>النشر</th>
+                <th>الخيارات</th>
+                <th>SKU</th>
+                <th>رصيد المخزون</th>
+                <th><span class="sr-only">إجراء</span></th>
             </tr>
-        @empty
-            <tr><td colspan="7" class="admin-empty">لا توجد نتائج مطابقة.</td></tr>
-        @endforelse
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody>
+            @foreach ($products as $product)
+                @php($published = $product->published_at && $product->published_at->lte(now()))
+                <tr>
+                    <td>
+                        <strong class="admin-table__primary">{{ $product->name_ar }}</strong>
+                        <span class="admin-table__secondary" dir="ltr">{{ $product->slug }}</span>
+                    </td>
+                    <td>{{ $product->category?->name_ar ?? '—' }}</td>
+                    <td><span class="admin-status {{ $published ? 'is-positive' : 'is-muted' }}">{{ $published ? 'منشور' : 'مسودة' }}</span></td>
+                    <td>{{ $product->variants_count }}</td>
+                    <td>
+                        @foreach ($product->variants->sortByDesc('is_default') as $variant)
+                            <span class="admin-table__primary" dir="ltr">{{ $variant->sku }}</span>
+                        @endforeach
+                    </td>
+                    <td>{{ number_format((int) ($product->variants_sum_inventory_quantity ?? 0)) }}</td>
+                    <td><a class="admin-row-action" href="{{ route('admin.catalog.edit', $product) }}">إدارة</a></td>
+                </tr>
+            @endforeach
+            </tbody>
+        </table>
+    </div>
+@endif
 
 @if ($products->hasPages())
     <nav class="admin-pagination" aria-label="صفحات الكتالوج">
