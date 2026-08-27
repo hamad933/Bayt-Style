@@ -42,7 +42,7 @@
             <a href="{{ route('cart.index') }}">السلة <span x-text="'(' + $store.cart.count + ')' "></span></a>
             <a href="{{ route('home') }}#seasonal">الإلهام</a>
             <a href="#customer-service">خدمات العملاء</a>
-            <button type="button" @click="mobileOpen = false; loginOpen = true">تسجيل الدخول</button>
+            <button type="button" @click="$refs.mobileMenuTrigger.focus(); mobileOpen = false; loginOpen = true">تسجيل الدخول</button>
         </nav>
     </div>
 
