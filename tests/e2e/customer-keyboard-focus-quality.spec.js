@@ -56,6 +56,7 @@ test('[QUALITY][KEYBOARD] login dialog traps focus and returns it to the opener'
     await trigger.focus();
     await trigger.press('Enter');
 
+    const backdrop = page.locator('.dialog-backdrop');
     const dialog = page.getByRole('dialog', { name: 'تسجيل الدخول' });
     const close = dialog.getByRole('button', { name: 'إغلاق' });
     const continueAsGuest = dialog.getByRole('button', { name: 'متابعة كزائر' });
@@ -66,6 +67,7 @@ test('[QUALITY][KEYBOARD] login dialog traps focus and returns it to the opener'
     await expect(continueAsGuest).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(close).toBeFocused();
+    await expect(backdrop).toHaveCSS('opacity', '1');
 
     await page.screenshot({ path: path.join(outputDir, 'login-dialog-focus-1440.png'), fullPage: true });
     await page.keyboard.press('Escape');
@@ -85,6 +87,7 @@ test('[QUALITY][KEYBOARD] cart drawer traps empty-state focus and restores it on
     await trigger.focus();
     await trigger.press('Enter');
 
+    const backdrop = page.locator('.drawer-backdrop');
     const drawer = page.getByRole('dialog', { name: 'مختاراتك الحالية' });
     const close = drawer.getByRole('button', { name: 'إغلاق السلة' });
     await expect(drawer).toBeVisible();
@@ -95,6 +98,7 @@ test('[QUALITY][KEYBOARD] cart drawer traps empty-state focus and restores it on
     await expect(close).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(close).toBeFocused();
+    await expect(backdrop).toHaveCSS('opacity', '1');
 
     await page.screenshot({ path: path.join(outputDir, 'cart-drawer-empty-focus-390.png'), fullPage: true });
     await page.keyboard.press('Escape');
