@@ -37,8 +37,8 @@ test('[QUALITY][419] expired customer session is Arabic, branded, recoverable an
   const runtimeFailures = watchRuntime(page);
   await page.goto('/cart');
 
-  await Promise.all([
-    page.waitForNavigation(),
+  const [response] = await Promise.all([
+    page.waitForResponse((candidate) => candidate.url().endsWith('/cart/items') && candidate.request().resourceType() === 'document'),
     page.evaluate(() => {
       const form = document.createElement('form');
       form.method = 'POST';
@@ -48,10 +48,10 @@ test('[QUALITY][419] expired customer session is Arabic, branded, recoverable an
     }),
   ]);
 
-  const response = await page.waitForResponse((candidate) => candidate.url().endsWith('/cart/items') && candidate.request().resourceType() === 'document').catch(() => null);
-  if (response) expect(response.status()).toBe(419);
-
+  expect(response.status()).toBe(419);
+  await page.waitForLoadState('domcontentloaded');
   await page.screenshot({ path: path.join(outputDir, 'session-expired-390.png'), fullPage: true });
+
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: 'انتهت جلسة التصفح' })).toBeVisible();
   await expect(page.getByText('انتهت صلاحية الجلسة قبل إكمال الإجراء المطلوب.')).toBeVisible();
