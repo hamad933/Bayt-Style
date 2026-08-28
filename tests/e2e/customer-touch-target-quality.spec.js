@@ -58,16 +58,21 @@ test('[QUALITY][TOUCH] critical mobile header and overlay controls keep usable r
     await expectMinimumTarget(mobileLogin, 'mobile login trigger');
     await mobileLogin.click();
 
+    const loginBackdrop = page.locator('.dialog-backdrop');
     const loginDialog = page.getByRole('dialog', { name: 'تسجيل الدخول' });
     await expect(loginDialog).toBeVisible();
+    await expect(loginBackdrop).toHaveCSS('opacity', '1');
     await expectMinimumTarget(loginDialog.getByRole('button', { name: 'إغلاق' }), 'login dialog close');
     await expectMinimumTarget(loginDialog.getByRole('button', { name: 'متابعة كزائر' }), 'continue as guest');
     await page.screenshot({ path: path.join(outputDir, 'login-dialog-touch-targets-390.png'), fullPage: true });
     await page.keyboard.press('Escape');
+    await expect(loginDialog).toBeHidden();
 
     await cart.click();
+    const drawerBackdrop = page.locator('.drawer-backdrop');
     const cartDrawer = page.getByRole('dialog', { name: 'مختاراتك الحالية' });
     await expect(cartDrawer).toBeVisible();
+    await expect(drawerBackdrop).toHaveCSS('opacity', '1');
     await expectMinimumTarget(cartDrawer.getByRole('button', { name: 'إغلاق السلة' }), 'cart drawer close');
     await page.screenshot({ path: path.join(outputDir, 'cart-drawer-touch-targets-390.png'), fullPage: true });
 
