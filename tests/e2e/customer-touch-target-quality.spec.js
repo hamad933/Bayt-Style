@@ -40,11 +40,9 @@ test('[QUALITY][TOUCH] critical mobile header and overlay controls keep usable r
 
     const menu = page.getByRole('button', { name: 'فتح القائمة' });
     const cart = page.getByRole('button', { name: 'فتح السلة' });
-    const login = page.getByRole('button', { name: 'تسجيل الدخول' }).first();
 
     await expectMinimumTarget(menu, 'mobile menu trigger');
     await expectMinimumTarget(cart, 'cart trigger');
-    await expectMinimumTarget(login, 'login trigger');
 
     await menu.click();
     const mobileNav = page.getByRole('navigation', { name: 'تنقل الجوال' });
@@ -55,9 +53,11 @@ test('[QUALITY][TOUCH] critical mobile header and overlay controls keep usable r
     for (let index = 0; index < mobileLinkCount; index += 1) {
         await expectMinimumTarget(mobileLinks.nth(index), `mobile navigation link ${index + 1}`);
     }
-    await page.keyboard.press('Escape');
 
-    await login.click();
+    const mobileLogin = mobileNav.getByRole('button', { name: 'تسجيل الدخول' });
+    await expectMinimumTarget(mobileLogin, 'mobile login trigger');
+    await mobileLogin.click();
+
     const loginDialog = page.getByRole('dialog', { name: 'تسجيل الدخول' });
     await expect(loginDialog).toBeVisible();
     await expectMinimumTarget(loginDialog.getByRole('button', { name: 'إغلاق' }), 'login dialog close');
