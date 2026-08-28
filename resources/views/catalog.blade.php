@@ -4,7 +4,38 @@
 @section('description', 'استكشف منتجات بيت وأسلوب وابحث بالعربية حسب الفئة والغرفة والخامة والميزانية.')
 
 @section('content')
-<section class="catalog-intro shell">
+@if($products->isEmpty())
+<style>
+@media (max-width: 600px) {
+    .catalog-intro-empty {
+        display: block;
+        min-height: 0;
+        margin-top: 1rem;
+    }
+    .catalog-intro-empty .catalog-intro-image {
+        display: none;
+    }
+    .catalog-intro-empty .catalog-intro-copy {
+        padding: 1.25rem;
+    }
+    .catalog-intro-empty .breadcrumbs {
+        margin-bottom: .75rem;
+    }
+    .catalog-intro-empty .catalog-intro-copy h1 {
+        font-size: 2rem;
+        margin: .1rem 0 .5rem;
+    }
+    .catalog-intro-empty + .catalog-tools {
+        padding-top: 1rem;
+    }
+    .catalog-layout-empty {
+        padding-top: 1.25rem;
+    }
+}
+</style>
+@endif
+
+<section @class(['catalog-intro shell', 'catalog-intro-empty' => $products->isEmpty()])>
     <div class="catalog-intro-image"><img src="{{ asset('images/editorial/living.jpg') }}" alt="غرفة معيشة مع أريكة زيتونية"></div>
     <div class="catalog-intro-copy">
         <nav class="breadcrumbs" aria-label="مسار التنقل"><a href="{{ route('home') }}">الرئيسية</a><span>‹</span><span>المنتجات</span></nav>
@@ -58,7 +89,7 @@
 </div>
 @endif
 
-<section class="catalog-layout shell">
+<section @class(['catalog-layout shell', 'catalog-layout-empty' => $products->isEmpty()])>
     <aside class="filters-panel desktop-filters" aria-label="تصفية المنتجات">
         <div class="filter-title"><div><p class="eyebrow">المنتجات</p><h2>تصفية</h2></div><span>{{ $products->total() }} نتائج</span></div>
         @include('partials.filters')
