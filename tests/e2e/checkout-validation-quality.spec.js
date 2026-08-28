@@ -43,7 +43,7 @@ async function createCheckout(page) {
   await expect(page.getByTestId('checkout-page')).toContainText('BAS-CHAIR-SAND-01');
 }
 
-test('[QUALITY][CHECKOUT VALIDATION] server validation summary is visible, specific, and recoverable on mobile', async ({ page }) => {
+test('[QUALITY][CHECKOUT VALIDATION] server validation is visible, recoverable, and programmatically associated on mobile', async ({ page }) => {
   const viewport = { width: 390, height: 844 };
   await page.setViewportSize(viewport);
   const runtimeFailures = watchRuntime(page);
@@ -65,6 +65,31 @@ test('[QUALITY][CHECKOUT VALIDATION] server validation summary is visible, speci
   await expect(summary).toContainText('حقل المدينة مطلوب.');
   await expect(summary).toContainText('حقل العنوان مطلوب.');
   await expect(summary).toContainText('يجب الموافقة صراحةً على الشروط المعروضة قبل تأكيد الطلب.');
+
+  const associations = [
+    ['الاسم الكامل', 'full-name-error', 'حقل الاسم الكامل مطلوب.'],
+    ['البريد الإلكتروني', 'email-error', 'أدخل البريد الإلكتروني بصيغة صحيحة.'],
+    ['رقم الجوال', 'phone-error', 'حقل رقم الجوال مطلوب.'],
+    ['المنطقة / المحافظة', 'region-error', 'حقل المنطقة / المحافظة مطلوب.'],
+    ['المدينة', 'city-error', 'حقل المدينة مطلوب.'],
+    ['الشارع / سطر العنوان', 'address-line-error', 'حقل العنوان مطلوب.'],
+  ];
+
+  for (const [label, errorId, message] of associations) {
+    const field = page.getByLabel(label);
+    await expect(field).toHaveAttribute('aria-invalid', 'true');
+    await expect(field).toHaveAttribute('aria-describedby', errorId);
+    const inlineError = page.locator(`#${errorId}`);
+    await expect(inlineError).toBeVisible();
+    await expect(inlineError).toHaveText(message);
+  }
+
+  const terms = page.getByRole('checkbox', { name: /أوافق على إرسال بيانات هذا الطلب/ });
+  await expect(terms).toHaveAttribute('aria-invalid', 'true');
+  await expect(terms).toHaveAttribute('aria-describedby', 'terms-error');
+  await expect(page.locator('#terms-error')).toBeVisible();
+  await expect(page.locator('#terms-error')).toHaveText('يجب الموافقة صراحةً على الشروط المعروضة قبل تأكيد الطلب.');
+
   await expect(page.getByLabel('البريد الإلكتروني')).toHaveValue('invalid-address');
   await assertInsideInitialViewport(summary, viewport.height);
   await assertNoPageOverflow(page);
