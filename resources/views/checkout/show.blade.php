@@ -10,7 +10,7 @@
     </header>
 
     @if($errors->any())
-        <div class="s06-error-summary" role="alert" tabindex="-1" data-testid="checkout-errors">
+        <div class="s06-error-summary" id="checkout-errors" role="alert" tabindex="-1" data-testid="checkout-errors">
             <strong>راجع الحقول التالية:</strong>
             <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
         </div>
@@ -24,9 +24,18 @@
                 <span class="checkout-step" aria-hidden="true">01</span>
                 <div><p class="eyebrow">بيانات العميل</p><h2 id="contact-title">كيف نتواصل معك؟</h2></div>
                 <div class="field-grid">
-                    <label class="field field-wide">الاسم الكامل<input name="full_name" value="{{ old('full_name') }}" autocomplete="name" required></label>
-                    <label class="field">البريد الإلكتروني<input name="email" type="email" value="{{ old('email') }}" autocomplete="email" dir="ltr" required></label>
-                    <label class="field">رقم الجوال<input name="phone" type="tel" value="{{ old('phone') }}" autocomplete="tel" dir="ltr" required></label>
+                    <label class="field field-wide">الاسم الكامل
+                        <input name="full_name" value="{{ old('full_name') }}" autocomplete="name" required @error('full_name') aria-invalid="true" aria-describedby="full-name-error" @enderror>
+                        @error('full_name')<small class="field-error" id="full-name-error">{{ $message }}</small>@enderror
+                    </label>
+                    <label class="field">البريد الإلكتروني
+                        <input name="email" type="email" value="{{ old('email') }}" autocomplete="email" dir="ltr" required @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
+                        @error('email')<small class="field-error" id="email-error">{{ $message }}</small>@enderror
+                    </label>
+                    <label class="field">رقم الجوال
+                        <input name="phone" type="tel" value="{{ old('phone') }}" autocomplete="tel" dir="ltr" required @error('phone') aria-invalid="true" aria-describedby="phone-error" @enderror>
+                        @error('phone')<small class="field-error" id="phone-error">{{ $message }}</small>@enderror
+                    </label>
                 </div>
             </section>
 
@@ -35,12 +44,22 @@
                 <div><p class="eyebrow">عنوان التسليم</p><h2 id="address-title">أين يصل الطلب؟</h2></div>
                 <div class="field-grid">
                     <label class="field">الدولة
-                        <select name="country_code" required><option value="{{ config('commerce.checkout.country_code') }}" @selected(old('country_code', config('commerce.checkout.country_code')) === config('commerce.checkout.country_code'))>{{ config('commerce.checkout.country_name_ar') }}</option></select>
+                        <select name="country_code" required @error('country_code') aria-invalid="true" aria-describedby="country-code-error" @enderror><option value="{{ config('commerce.checkout.country_code') }}" @selected(old('country_code', config('commerce.checkout.country_code')) === config('commerce.checkout.country_code'))>{{ config('commerce.checkout.country_name_ar') }}</option></select>
+                        @error('country_code')<small class="field-error" id="country-code-error">{{ $message }}</small>@enderror
                     </label>
-                    <label class="field">المنطقة / المحافظة<input name="region" value="{{ old('region') }}" autocomplete="address-level1" required></label>
-                    <label class="field">المدينة<input name="city" value="{{ old('city') }}" autocomplete="address-level2" required></label>
+                    <label class="field">المنطقة / المحافظة
+                        <input name="region" value="{{ old('region') }}" autocomplete="address-level1" required @error('region') aria-invalid="true" aria-describedby="region-error" @enderror>
+                        @error('region')<small class="field-error" id="region-error">{{ $message }}</small>@enderror
+                    </label>
+                    <label class="field">المدينة
+                        <input name="city" value="{{ old('city') }}" autocomplete="address-level2" required @error('city') aria-invalid="true" aria-describedby="city-error" @enderror>
+                        @error('city')<small class="field-error" id="city-error">{{ $message }}</small>@enderror
+                    </label>
                     <label class="field">الحي <span class="optional">اختياري</span><input name="district" value="{{ old('district') }}"></label>
-                    <label class="field field-wide">الشارع / سطر العنوان<input name="address_line" value="{{ old('address_line') }}" autocomplete="street-address" required></label>
+                    <label class="field field-wide">الشارع / سطر العنوان
+                        <input name="address_line" value="{{ old('address_line') }}" autocomplete="street-address" required @error('address_line') aria-invalid="true" aria-describedby="address-line-error" @enderror>
+                        @error('address_line')<small class="field-error" id="address-line-error">{{ $message }}</small>@enderror
+                    </label>
                     <label class="field">المبنى / الوحدة <span class="optional">اختياري</span><input name="building_unit" value="{{ old('building_unit') }}"></label>
                     <label class="field">الرمز البريدي <span class="optional">عند انطباقه</span><input name="postal_code" value="{{ old('postal_code') }}" inputmode="numeric" dir="ltr"></label>
                     <label class="field field-wide">ملاحظات التسليم <span class="optional">اختياري</span><textarea name="delivery_notes" rows="3">{{ old('delivery_notes') }}</textarea></label>
@@ -53,12 +72,13 @@
                 <div class="choice-list">
                     @foreach($methods as $method)
                         <label class="choice">
-                            <input type="radio" name="shipping_method" value="{{ $method['code'] }}" @checked(old('shipping_method',$shippingCode) === $method['code']) required>
+                            <input type="radio" name="shipping_method" value="{{ $method['code'] }}" @checked(old('shipping_method',$shippingCode) === $method['code']) required @error('shipping_method') aria-invalid="true" aria-describedby="shipping-method-error" @enderror>
                             <span><strong>{{ $method['name_ar'] }}</strong><small>رسوم التوصيل المعروضة حاليًا تجريبية وليست تسعيرًا نهائيًا.</small></span>
                             <bdi>{{ number_format($method['amount_minor']/100,0) }} ر.س</bdi>
                         </label>
                     @endforeach
                 </div>
+                @error('shipping_method')<p class="field-error" id="shipping-method-error">{{ $message }}</p>@enderror
                 <p class="s06-boundary-note">سيتم تحديد تفاصيل التوصيل النهائية وفق الوجهة والسياسة المعتمدة. لا يوجد موعد توصيل مؤكد حاليًا.</p>
             </section>
 
@@ -66,9 +86,10 @@
                 <span class="checkout-step" aria-hidden="true">04</span>
                 <div><p class="eyebrow">الدفع</p><h2 id="payment-title">حالة الدفع الحالية</h2></div>
                 <label class="choice">
-                    <input type="radio" name="payment_method" value="{{ config('commerce.checkout.payment_method_code') }}" checked required>
+                    <input type="radio" name="payment_method" value="{{ config('commerce.checkout.payment_method_code') }}" checked required @error('payment_method') aria-invalid="true" aria-describedby="payment-method-error" @enderror>
                     <span><strong>الدفع غير مكتمل بعد</strong><small>لا توجد وسيلة دفع إلكترونية مفعّلة حاليًا، ولن نطلب بيانات بطاقة أو بيانات بنكية في هذه الخطوة.</small></span>
                 </label>
+                @error('payment_method')<p class="field-error" id="payment-method-error">{{ $message }}</p>@enderror
                 <p class="s06-boundary-note">تأكيد الطلب لا يعني نجاح الدفع. سيبقى الدفع غير مكتمل حتى يتم التحقق منه عبر وسيلة معتمدة.</p>
             </section>
 
@@ -76,9 +97,10 @@
                 <span class="checkout-step" aria-hidden="true">05</span>
                 <div><p class="eyebrow">المراجعة والموافقة</p><h2 id="consent-title">راجع ثم أكّد</h2></div>
                 <label class="consent-row">
-                    <input type="checkbox" name="terms" value="1" @checked(old('terms')) required>
+                    <input type="checkbox" name="terms" value="1" @checked(old('terms')) required @error('terms') aria-invalid="true" aria-describedby="terms-error" @enderror>
                     <span>أوافق على إرسال بيانات هذا الطلب للمراجعة وفق الشروط المعروضة في هذه التجربة. هذه الصياغة مؤقتة وليست بديلًا عن الشروط القانونية النهائية عند الإطلاق.</span>
                 </label>
+                @error('terms')<p class="field-error" id="terms-error">{{ $message }}</p>@enderror
             </section>
         </div>
 
