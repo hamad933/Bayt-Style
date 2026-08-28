@@ -74,13 +74,13 @@ test('[QUALITY][CONTRAST] representative customer text and actions meet rendered
   expect(response.status()).toBeLessThan(400);
 
   await requireContrast(page.locator('.desktop-nav a').first(), 'desktop navigation');
-  await requireContrast(page.locator('.hero-copy > p').filter({ hasNot: page.locator('.eyebrow') }).first(), 'hero supporting copy');
+  await requireContrast(page.locator('.hero-copy > p:not(.eyebrow)').first(), 'hero supporting copy');
   await requireContrast(page.locator('.hero-actions-row .button-primary'), 'hero primary action');
 
   await page.getByRole('button', { name: 'تسجيل الدخول' }).click();
   const dialog = page.getByRole('dialog', { name: 'تسجيل الدخول' });
   await expect(dialog).toBeVisible();
-  await requireContrast(dialog.locator('p').filter({ hasNot: dialog.locator('.eyebrow') }).first(), 'login dialog body');
+  await requireContrast(dialog.locator('p:not(.eyebrow)').first(), 'login dialog body');
   await requireContrast(dialog.getByRole('button', { name: 'متابعة كزائر' }), 'login dialog action');
 
   expect(runtimeFailures).toEqual([]);
