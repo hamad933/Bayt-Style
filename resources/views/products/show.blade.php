@@ -17,7 +17,7 @@
     </nav>
 
     <div class="product-detail-grid">
-        <div class="gallery" x-data="gallery({{ $product->media->count() }})" @keydown.arrow-left.prevent="next()" @keydown.arrow-right.prevent="previous()">
+        <div class="gallery" x-data="gallery({{ $product->media->count() }})" @keydown.arrow-left.prevent="next(); $nextTick(() => document.getElementById('product-media-tab-' + active)?.focus())" @keydown.arrow-right.prevent="previous(); $nextTick(() => document.getElementById('product-media-tab-' + active)?.focus())">
             <div class="gallery-main">
                 @foreach($product->media as $index => $media)
                     <img id="product-media-{{ $index }}" role="tabpanel" aria-labelledby="product-media-tab-{{ $index }}" x-show="active === {{ $index }}" x-transition.opacity src="{{ asset($media->path) }}" alt="{{ $media->alt_ar }}" @if($index > 0) loading="lazy" @endif>
