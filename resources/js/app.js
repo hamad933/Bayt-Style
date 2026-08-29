@@ -252,6 +252,7 @@ document.addEventListener('alpine:init', () => {
             quantity: 1,
             saved: Boolean(initialSaved),
             adding: false,
+            wishlistBusy: false,
             selectedOptions: { ...(defaultVariant?.options || {}) },
             get selectedVariant() {
                 return this.config.variants.find((variant) => this.config.dimensions.every((dimension) => {
@@ -296,6 +297,8 @@ document.addEventListener('alpine:init', () => {
                 }
             },
             async toggleWishlist() {
+                if (this.wishlistBusy) return;
+                this.wishlistBusy = true;
                 try {
                     const data = await requestJson(`/wishlist/${this.config.productId}/toggle`, { method: 'POST', body: '{}' });
                     this.saved = Boolean(data.saved);
@@ -304,6 +307,8 @@ document.addEventListener('alpine:init', () => {
                     Alpine.store('notice').show(this.saved ? 'تم حفظ القطعة في المفضلة.' : 'تمت إزالة القطعة من المفضلة.');
                 } catch (error) {
                     Alpine.store('notice').show(error.message);
+                } finally {
+                    this.wishlistBusy = false;
                 }
             },
         };

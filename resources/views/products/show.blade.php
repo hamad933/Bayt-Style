@@ -94,9 +94,9 @@
             </div>
 
             <div class="detail-secondary-actions">
-                <button type="button" class="detail-wishlist" @click="toggleWishlist" :aria-pressed="saved.toString()" data-testid="detail-wishlist">
+                <button type="button" class="detail-wishlist" @click="toggleWishlist" :aria-pressed="saved.toString()" :aria-busy="wishlistBusy.toString()" :disabled="wishlistBusy" data-testid="detail-wishlist">
                     <span x-text="saved ? '♥' : '♡'">{{ $saved ? '♥' : '♡' }}</span>
-                    <span x-text="saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة'">{{ $saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة' }}</span>
+                    <span x-text="wishlistBusy ? 'جارٍ التحديث…' : (saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة')">{{ $saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة' }}</span>
                 </button>
                 <button
                     type="button"
