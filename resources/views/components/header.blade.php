@@ -72,10 +72,10 @@
                             <span x-text="item.variant"></span>
                             <small dir="ltr" x-text="item.sku"></small>
                             <span><bdi x-text="item.price"></bdi> ر.س</span>
-                            <div class="mini-qty" :aria-label="`كمية ${item.product}`">
-                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity - 1)" :disabled="item.quantity <= 1" aria-label="تقليل الكمية">−</button>
+                            <div class="mini-qty" role="group" :aria-label="`كمية ${item.product}`">
+                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity - 1)" :disabled="item.quantity <= 1" :aria-label="`تقليل كمية ${item.product}`">−</button>
                                 <span x-text="item.quantity"></span>
-                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity + 1)" :disabled="item.quantity >= 10" aria-label="زيادة الكمية">+</button>
+                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity + 1)" :disabled="item.quantity >= 10" :aria-label="`زيادة كمية ${item.product}`">+</button>
                             </div>
                             <button class="remove-line" type="button" @click="$store.cart.remove(item.variant_id)">إزالة</button>
                         </div>

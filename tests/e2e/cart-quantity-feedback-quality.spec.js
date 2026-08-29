@@ -26,7 +26,7 @@ async function expectInsideViewport(locator, viewport) {
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
 }
 
-test('[QUALITY][A11Y][CART] quantity update is visibly confirmed through the polite live region on mobile', async ({ page }) => {
+test('[QUALITY][A11Y][CART] quantity controls have product context and updates are visibly confirmed on mobile', async ({ page }) => {
     const viewport = { width: 390, height: 844 };
     await page.setViewportSize(viewport);
     const runtimeFailures = watchRuntime(page);
@@ -42,12 +42,19 @@ test('[QUALITY][A11Y][CART] quantity update is visibly confirmed through the pol
     await expect(drawer).toBeVisible();
     await expect(drawer.getByText('جارٍ تحديث السلة…')).toBeHidden();
 
-    const quantity = drawer.locator('.mini-qty').first();
+    const productName = (await drawer.locator('.cart-line-copy > strong').first().textContent())?.trim();
+    expect(productName).toBeTruthy();
+    const quantity = drawer.getByRole('group', { name: `كمية ${productName}` });
     const quantityValue = quantity.locator('span');
-    const increase = quantity.getByRole('button', { name: 'زيادة الكمية' });
+    const decrease = quantity.getByRole('button', { name: `تقليل كمية ${productName}` });
+    const increase = quantity.getByRole('button', { name: `زيادة كمية ${productName}` });
+    await expect(quantity).toBeVisible();
+    await expect(decrease).toBeDisabled();
+    await expect(increase).toBeEnabled();
     await expect(quantityValue).toHaveText('1');
     await increase.click();
     await expect(quantityValue).toHaveText('2');
+    await expect(decrease).toBeEnabled();
 
     const region = page.locator('.toast-region');
     await expect(region).toHaveAttribute('aria-live', 'polite');
