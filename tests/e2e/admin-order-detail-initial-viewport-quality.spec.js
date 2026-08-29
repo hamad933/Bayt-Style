@@ -65,6 +65,25 @@ for (const viewport of [
         await expectInsideInitialViewport(page.getByRole('heading', { name: 'الدفع', exact: true }), viewport);
         await expectInsideInitialViewport(page.getByText('لا توجد سلطة نجاح دفع في المتصفح.', { exact: true }), viewport);
 
+        if (viewport.width <= 1000) {
+            const sequence = await page.evaluate(() => {
+                const grid = document.querySelector('.s10-order-head + .s10-grid.s10-grid--two');
+                const items = grid?.querySelector('.s10-table--compact')?.closest('.admin-panel');
+                const payment = grid?.querySelector('.s10-state--financial')?.closest('.admin-panel');
+                if (!grid || !items || !payment) return null;
+                return {
+                    firstIsPayment: grid.firstElementChild === payment,
+                    secondIsItems: payment.nextElementSibling === items,
+                    paymentTop: payment.getBoundingClientRect().top,
+                    itemsTop: items.getBoundingClientRect().top,
+                };
+            });
+            expect(sequence).not.toBeNull();
+            expect(sequence.firstIsPayment).toBe(true);
+            expect(sequence.secondIsItems).toBe(true);
+            expect(sequence.paymentTop).toBeLessThan(sequence.itemsTop);
+        }
+
         const hasOverflow = await page.evaluate(
             () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
         );
