@@ -77,7 +77,7 @@
                                 <span x-text="item.quantity"></span>
                                 <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity + 1)" :disabled="item.quantity >= 10" :aria-label="`زيادة كمية ${item.product}`">+</button>
                             </div>
-                            <button class="remove-line" type="button" @click="$store.cart.remove(item.variant_id)">إزالة</button>
+                            <button class="remove-line" type="button" @click="$store.cart.remove(item.variant_id)" :aria-label="`إزالة ${item.product} من السلة`">إزالة</button>
                         </div>
                     </article>
                 </template>
