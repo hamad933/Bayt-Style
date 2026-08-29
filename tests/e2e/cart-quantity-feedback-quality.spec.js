@@ -72,7 +72,7 @@ test('[QUALITY][A11Y][CART] item mutations are single-flight and visibly confirm
             return;
         }
         patchRequests += 1;
-        await new Promise((resolve) => setTimeout(resolve, 350));
+        await new Promise((resolve) => setTimeout(resolve, 1200));
         await route.continue();
     });
 
@@ -83,6 +83,12 @@ test('[QUALITY][A11Y][CART] item mutations are single-flight and visibly confirm
     await expect(remove).toBeDisabled();
     await expect(itemBusyStatus).toBeVisible();
     await expect(itemBusyStatus).toHaveText('جارٍ تحديث هذه القطعة…');
+    await expectInsideViewport(itemBusyStatus, viewport);
+
+    await page.screenshot({
+        path: path.join(outputDir, 'cart-quantity-busy-390.png'),
+        fullPage: false,
+    });
 
     await page.evaluate(() => {
         const cart = window.Alpine.store('cart');
