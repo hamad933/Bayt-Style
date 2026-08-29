@@ -126,4 +126,11 @@
         </aside>
     </form>
 </section>
+@if($errors->any())
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('checkout-errors')?.focus();
+    }, { once: true });
+</script>
+@endif
 @endsection
