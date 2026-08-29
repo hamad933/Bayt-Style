@@ -15,6 +15,7 @@ export default defineConfig({
         'resources/css/s10.css',
         'resources/css/reduced-motion.css',
         'resources/js/app.js',
+        'resources/js/s10-order-detail.js',
       ],
       refresh: true,
     }),
