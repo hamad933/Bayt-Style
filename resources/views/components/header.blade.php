@@ -25,7 +25,7 @@
                 <span aria-hidden="true">≍</span><span class="commerce-count" x-text="$store.comparison.count">{{ count(array_unique(array_map('intval', session('comparison', [])))) }}</span>
             </a>
             <button class="text-action desktop-only" type="button" @click="loginOpen = true" :aria-expanded="loginOpen.toString()" aria-controls="login-dialog">تسجيل الدخول</button>
-            <button class="icon-action" type="button" @click="$store.cart.openDrawer()" :aria-expanded="$store.cart.open.toString()" aria-controls="cart-drawer" aria-label="فتح السلة">
+            <button class="icon-action" type="button" @click="$store.cart.openDrawer()" :aria-expanded="$store.cart.open.toString()" aria-controls="cart-drawer" :aria-label="$store.cart.open ? 'إغلاق السلة' : 'فتح السلة'">
                 <span aria-hidden="true">◯</span><span class="cart-badge" x-text="$store.cart.count">{{ $cartCount }}</span>
             </button>
             <button class="menu-toggle" type="button" x-ref="mobileMenuTrigger" @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen.toString()" aria-controls="mobile-nav" :aria-label="mobileOpen ? 'إغلاق القائمة' : 'فتح القائمة'">☰</button>
