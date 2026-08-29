@@ -8,7 +8,7 @@ function watchRuntime(page) {
         if (message.type() === 'error') failures.push(`console.error: ${message.text()}`);
     });
     page.on('response', (response) => {
-        if (response.status() >= 500) failures.push(`HTTP ${response.status()}: ${response.url()}`));
+        if (response.status() >= 500) failures.push(`HTTP ${response.status()}: ${response.url()}`);
     });
     return failures;
 }
