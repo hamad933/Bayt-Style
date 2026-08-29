@@ -29,8 +29,11 @@ test('[QUALITY][A11Y] mini-cart loading is a visible polite status message', asy
     await expect(cartButton).toBeVisible();
     await cartButton.click();
 
+    const drawerBackdrop = page.locator('.drawer-backdrop');
     const drawer = page.getByRole('dialog', { name: 'مختاراتك الحالية' });
     await expect(drawer).toBeVisible();
+    await expect.poll(() => drawerBackdrop.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+
     const status = drawer.getByRole('status');
     await expect(status).toBeVisible();
     await expect(status).toHaveText('جارٍ تحديث السلة…');
