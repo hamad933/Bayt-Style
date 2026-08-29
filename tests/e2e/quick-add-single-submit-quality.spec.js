@@ -20,6 +20,7 @@ test('quick add exposes a truthful busy state and suppresses duplicate submissio
         await route.continue();
     });
 
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
     const quickAdd = page.locator('[data-testid^="quick-add-"]').first();
@@ -32,6 +33,8 @@ test('quick add exposes a truthful busy state and suppresses duplicate submissio
     await expect(quickAdd).toBeDisabled();
     await expect(quickAdd).toHaveText('جارٍ الإضافة…');
     await expect(quickAdd).toHaveAttribute('aria-busy', 'true');
+    await quickAdd.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: 'storage/test-artifacts/quick-add-busy-390.png', fullPage: false });
 
     await quickAdd.dispatchEvent('click');
 
