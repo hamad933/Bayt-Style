@@ -47,7 +47,7 @@ test('[QUALITY][A11Y][CATALOG] mobile filter drawer traps focus and restores its
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute('aria-modal', 'true');
 
-    const close = dialog.getByRole('button', { name: 'إغلاق لوحة التصفية' });
+    const close = dialog.getByRole('button', { name: 'إغلاق' });
     await expect(close).toBeFocused();
 
     const overlay = page.locator('.filter-overlay');
