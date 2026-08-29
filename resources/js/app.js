@@ -104,6 +104,17 @@ document.addEventListener('alpine:init', () => {
         open: false,
         loading: false,
         trigger: null,
+        busyVariantIds: {},
+        isItemBusy(variantId) {
+            return Boolean(this.busyVariantIds[String(variantId)]);
+        },
+        setItemBusy(variantId, busy) {
+            const key = String(variantId);
+            const next = { ...this.busyVariantIds };
+            if (busy) next[key] = true;
+            else delete next[key];
+            this.busyVariantIds = next;
+        },
         async refresh() {
             this.loading = true;
             try {
@@ -130,7 +141,8 @@ document.addEventListener('alpine:init', () => {
             return data;
         },
         async setQuantity(variantId, quantity) {
-            if (quantity < 1 || quantity > 10) return;
+            if (quantity < 1 || quantity > 10 || this.isItemBusy(variantId)) return;
+            this.setItemBusy(variantId, true);
             try {
                 const data = await requestJson(`/cart/items/${variantId}`, {
                     method: 'PATCH',
@@ -140,15 +152,21 @@ document.addEventListener('alpine:init', () => {
                 Alpine.store('notice').show('تم تحديث كمية القطعة في السلة.');
             } catch (error) {
                 Alpine.store('notice').show(error.message);
+            } finally {
+                this.setItemBusy(variantId, false);
             }
         },
         async remove(variantId) {
+            if (this.isItemBusy(variantId)) return;
+            this.setItemBusy(variantId, true);
             try {
                 const data = await requestJson(`/cart/items/${variantId}`, { method: 'DELETE' });
                 this.apply(data);
                 Alpine.store('notice').show('تمت إزالة القطعة من السلة.');
             } catch (error) {
                 Alpine.store('notice').show(error.message);
+            } finally {
+                this.setItemBusy(variantId, false);
             }
         },
         async openDrawer() {
