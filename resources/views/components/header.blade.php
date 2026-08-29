@@ -61,7 +61,7 @@
                 <div><p class="eyebrow">السلة</p><h2 id="cart-title">مختاراتك الحالية</h2></div>
                 <button type="button" @click="$store.cart.closeDrawer()" aria-label="إغلاق السلة">×</button>
             </div>
-            <template x-if="$store.cart.loading"><p class="muted">جارٍ تحديث السلة…</p></template>
+            <template x-if="$store.cart.loading"><p class="muted" role="status" aria-live="polite" aria-atomic="true">جارٍ تحديث السلة…</p></template>
             <template x-if="!$store.cart.loading && $store.cart.items.length === 0"><p class="empty-note">لم تضف أي قطعة بعد.</p></template>
             <div class="cart-lines" x-show="$store.cart.items.length">
                 <template x-for="item in $store.cart.items" :key="item.variant_id">
