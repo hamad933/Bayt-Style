@@ -25,9 +25,11 @@
             @click="toggle"
             :aria-pressed="saved.toString()"
             :class="{ 'is-saved': saved }"
-            :aria-label="saved ? 'إزالة {{ $product->name_ar }} من المفضلة' : 'حفظ {{ $product->name_ar }} في المفضلة'"
+            :disabled="busy"
+            :aria-busy="busy.toString()"
+            :aria-label="busy ? 'جارٍ تحديث مفضلة {{ $product->name_ar }}' : (saved ? 'إزالة {{ $product->name_ar }} من المفضلة' : 'حفظ {{ $product->name_ar }} في المفضلة')"
             data-testid="wishlist-toggle"
-        ><span x-text="saved ? '♥' : '♡'">{{ $saved ? '♥' : '♡' }}</span></button>
+        ><span x-text="busy ? '…' : (saved ? '♥' : '♡')">{{ $saved ? '♥' : '♡' }}</span></button>
     </div>
     <div class="product-meta">{{ $product->material_ar }} · {{ $product->room_ar }}</div>
     <h3><a href="{{ route('products.show', $product) }}">{{ $product->name_ar }}</a></h3>
@@ -75,7 +77,8 @@
             @click="toggle"
             :aria-pressed="compared.toString()"
             :disabled="busy"
+            :aria-busy="busy.toString()"
             data-testid="comparison-toggle"
-        ><span x-text="compared ? 'إزالة من المقارنة' : 'أضف للمقارنة'">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
+        ><span x-text="busy ? 'جارٍ التحديث…' : (compared ? 'إزالة من المقارنة' : 'أضف للمقارنة')">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
     </div>
 </article>
