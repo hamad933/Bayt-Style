@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'إدارة بيت وأسلوب')</title>
-    @vite(['resources/css/app.css', 'resources/css/s09.css', 'resources/css/s10.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/s09.css', 'resources/css/s10.css', 'resources/js/app.js', 'resources/js/s10-order-detail.js'])
 </head>
 <body class="admin-body">
 <a class="skip-link" href="#admin-main">انتقل إلى المحتوى الرئيسي</a>
