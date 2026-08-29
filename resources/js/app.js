@@ -143,10 +143,24 @@ document.addEventListener('alpine:init', () => {
             }
         },
         async remove(variantId) {
+            const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            const line = trigger?.closest('.cart-line') || null;
+            const lines = line?.parentElement ? [...line.parentElement.querySelectorAll('.cart-line')] : [];
+            const removedIndex = line ? lines.indexOf(line) : -1;
             try {
                 const data = await requestJson(`/cart/items/${variantId}`, { method: 'DELETE' });
                 this.apply(data);
                 Alpine.store('notice').show('تمت إزالة القطعة من السلة.');
+                Alpine.nextTick(() => {
+                    if (!this.open) return;
+                    const drawer = document.getElementById('cart-drawer');
+                    if (!drawer) return;
+                    const removeButtons = [...drawer.querySelectorAll('.remove-line')]
+                        .filter((element) => element.offsetParent !== null);
+                    const nextIndex = removedIndex < 0 ? 0 : Math.min(removedIndex, removeButtons.length - 1);
+                    const target = removeButtons[nextIndex] || drawer.querySelector('button[aria-label="إغلاق السلة"]');
+                    target?.focus();
+                });
             } catch (error) {
                 Alpine.store('notice').show(error.message);
             }
