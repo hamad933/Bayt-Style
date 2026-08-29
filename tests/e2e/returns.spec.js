@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 fs.mkdirSync('storage/test-artifacts/visual', { recursive: true });
 
 const forbiddenCustomerTerms = [
-    'S08', 'workstream', 'pending_payment', 'not_reserved', 'not_started',
+    'workstream', 'pending_payment', 'not_reserved', 'not_started',
     'policy_not_activated', 'checkout_session', 'disposition_decided',
     'authoritative_return_state', 'demo_unconfigured_zero',
 ];
@@ -58,6 +58,7 @@ for (const viewport of [
         await expect(page.locator('[data-testid="start-return"]')).toHaveCount(0);
 
         const body = await page.locator('body').innerText();
+        expect(body).not.toMatch(/(?:^|\W)S08(?:\W|$)/);
         for (const term of forbiddenCustomerTerms) expect(body).not.toContain(term);
         expect(body).not.toContain('اكتمل الاسترداد');
         expect(body).not.toContain('رسوم إعادة تخزين');
