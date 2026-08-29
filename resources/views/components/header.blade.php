@@ -28,7 +28,7 @@
             <button class="icon-action" type="button" @click="$store.cart.openDrawer()" :aria-expanded="$store.cart.open.toString()" aria-controls="cart-drawer" aria-label="فتح السلة">
                 <span aria-hidden="true">◯</span><span class="cart-badge" x-text="$store.cart.count">{{ $cartCount }}</span>
             </button>
-            <button class="menu-toggle" type="button" x-ref="mobileMenuTrigger" @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen.toString()" aria-controls="mobile-nav" aria-label="فتح القائمة">☰</button>
+            <button class="menu-toggle" type="button" x-ref="mobileMenuTrigger" @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen.toString()" aria-controls="mobile-nav" :aria-label="mobileOpen ? 'إغلاق القائمة' : 'فتح القائمة'">☰</button>
         </div>
     </div>
 
