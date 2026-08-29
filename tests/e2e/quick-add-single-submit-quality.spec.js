@@ -47,3 +47,36 @@ test('quick add exposes a truthful busy state and suppresses duplicate submissio
     expect(consoleErrors).toEqual([]);
     expect(serverErrors).toEqual([]);
 });
+
+test('quick add recovers from an expected request rejection and shows the user the error', async ({ page }) => {
+    const pageErrors = [];
+    const consoleErrors = [];
+
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+        if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+
+    await page.route('**/cart/items', async (route) => {
+        await route.fulfill({
+            status: 422,
+            contentType: 'application/json',
+            body: JSON.stringify({ message: 'تعذر إضافة القطعة الآن.' }),
+        });
+    });
+
+    await page.goto('/');
+
+    const quickAdd = page.locator('[data-testid^="quick-add-"]').first();
+    await expect(quickAdd).toBeVisible();
+    await quickAdd.click();
+
+    await expect(page.locator('.toast')).toBeVisible();
+    await expect(page.locator('.toast')).toHaveText('تعذر إضافة القطعة الآن.');
+    await expect(quickAdd).toBeEnabled();
+    await expect(quickAdd).toHaveText('أضف إلى السلة');
+    await expect(quickAdd).toHaveAttribute('aria-busy', 'false');
+
+    expect(pageErrors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+});
