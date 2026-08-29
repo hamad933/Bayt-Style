@@ -59,8 +59,15 @@ test('[QUALITY][A11Y][CART] item mutations are single-flight and visibly confirm
     await expect(quantityValue).toHaveText('1');
 
     let patchRequests = 0;
+    let deleteRequests = 0;
     await page.route('**/cart/items/*', async (route) => {
-        if (route.request().method() !== 'PATCH') {
+        const method = route.request().method();
+        if (method === 'DELETE') {
+            deleteRequests += 1;
+            await route.continue();
+            return;
+        }
+        if (method !== 'PATCH') {
             await route.continue();
             return;
         }
@@ -84,6 +91,7 @@ test('[QUALITY][A11Y][CART] item mutations are single-flight and visibly confirm
         cart.remove(item.variant_id);
     });
     await expect.poll(() => patchRequests).toBe(1);
+    expect(deleteRequests).toBe(0);
 
     await expect(quantityValue).toHaveText('2');
     await expect(line).toHaveAttribute('aria-busy', 'false');
