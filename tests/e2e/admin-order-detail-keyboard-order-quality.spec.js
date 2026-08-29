@@ -26,6 +26,21 @@ async function openEvidenceOrder(page) {
     await expect(page).toHaveURL(/\/admin\/orders\/BAS-S10-EVIDENCE$/);
 }
 
+async function waitForResponsiveDomSequence(page, compact) {
+    await expect.poll(async () => page.evaluate((isCompact) => {
+        const itemsRegion = document.querySelector('[role="region"][aria-label="بنود الطلب"]');
+        const itemsPanel = itemsRegion?.closest('.admin-panel');
+        const reason = document.querySelector('.s10-sensitive-form textarea[name="reason"]');
+        const paymentPanel = reason?.closest('.admin-panel');
+        if (!itemsPanel || !paymentPanel) return false;
+
+        const itemsBeforePayment = Boolean(
+            itemsPanel.compareDocumentPosition(paymentPanel) & Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+        return isCompact ? !itemsBeforePayment : itemsBeforePayment;
+    }, compact)).toBe(true);
+}
+
 async function pressTabAndExpect(page, locator) {
     await page.keyboard.press('Tab');
     await expect(locator).toBeFocused();
@@ -60,6 +75,7 @@ for (const viewport of [
         await expect(itemsRegion).toBeVisible();
         await expect(reason).toBeVisible();
         await expect(cancelButton).toBeVisible();
+        await waitForResponsiveDomSequence(page, viewport.compact);
         await backLink.focus();
         await expect(backLink).toBeFocused();
 
