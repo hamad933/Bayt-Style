@@ -30,17 +30,20 @@ test('[QUALITY][KEYBOARD] mobile navigation closes with Escape and restores focu
     const runtimeFailures = watchRuntime(page);
     await page.goto('/');
 
-    const trigger = page.getByRole('button', { name: 'فتح القائمة' });
+    const trigger = page.locator('.menu-toggle');
     await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveAccessibleName('فتح القائمة');
     await trigger.focus();
     await trigger.press('Enter');
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(trigger).toHaveAccessibleName('إغلاق القائمة');
     await expect(page.getByRole('navigation', { name: 'تنقل الجوال' })).toBeVisible();
 
     await page.screenshot({ path: path.join(outputDir, 'mobile-navigation-open-390.png'), fullPage: true });
     await page.keyboard.press('Escape');
 
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toHaveAccessibleName('فتح القائمة');
     await expect(page.getByRole('navigation', { name: 'تنقل الجوال' })).toBeHidden();
     await expect(trigger).toBeFocused();
     await expectNoPageOverflow(page);
