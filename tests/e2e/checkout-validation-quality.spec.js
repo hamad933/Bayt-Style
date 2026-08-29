@@ -43,7 +43,7 @@ async function createCheckout(page) {
   await expect(page.getByTestId('checkout-page')).toContainText('BAS-CHAIR-SAND-01');
 }
 
-test('[QUALITY][CHECKOUT VALIDATION] server validation is visible, recoverable, and programmatically associated on mobile', async ({ page }) => {
+test('[QUALITY][CHECKOUT VALIDATION] server validation is focused, visible, recoverable, and programmatically associated on mobile', async ({ page }) => {
   const viewport = { width: 390, height: 844 };
   await page.setViewportSize(viewport);
   const runtimeFailures = watchRuntime(page);
@@ -56,6 +56,7 @@ test('[QUALITY][CHECKOUT VALIDATION] server validation is visible, recoverable, 
   await expect(page).toHaveURL(/\/checkout$/);
   const summary = page.getByTestId('checkout-errors');
   await expect(summary).toBeVisible();
+  await expect(summary).toBeFocused();
   await expect(summary).toHaveAttribute('role', 'alert');
   await expect(summary).toContainText('راجع الحقول التالية:');
   await expect(summary).toContainText('حقل الاسم الكامل مطلوب.');
@@ -96,7 +97,7 @@ test('[QUALITY][CHECKOUT VALIDATION] server validation is visible, recoverable, 
   expect(runtimeFailures).toEqual([]);
 
   await page.screenshot({
-    path: path.join(outputDir, 'checkout-validation-errors-390.png'),
-    fullPage: true,
+    path: path.join(outputDir, 'checkout-validation-errors-focused-390.png'),
+    fullPage: false,
   });
 });
