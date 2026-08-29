@@ -15,6 +15,12 @@ if (!expectedRef?.trim()) throw new Error('Evidence ref must be exact-bound befo
 if (!fs.existsSync(manifestPath)) throw new Error(`Canonical IPA manifest missing: ${manifestPath}`);
 if (!fs.existsSync(recordsPath)) throw new Error(`Canonical IPA evidence records missing: ${recordsPath}`);
 
+try {
+  execFileSync('git', ['cat-file', '-e', `${expectedBaseline}^{commit}`], { stdio: 'ignore' });
+} catch {
+  execFileSync('git', ['fetch', '--no-tags', '--depth=1', 'origin', expectedBaseline], { stdio: 'inherit' });
+}
+
 const productApplicationPaths = [
   'app',
   'bootstrap',
