@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
 function watchRuntime(page) {
@@ -7,7 +8,7 @@ function watchRuntime(page) {
         if (message.type() === 'error') failures.push(`console.error: ${message.text()}`);
     });
     page.on('response', (response) => {
-        if (response.status() >= 500) failures.push(`HTTP ${response.status()}: ${response.url()}`);
+        if (response.status() >= 500) failures.push(`HTTP ${response.status()}: ${response.url()}`));
     });
     return failures;
 }
@@ -40,6 +41,12 @@ test('[QUALITY][A11Y] mini-cart loading is a visible polite status message', asy
     expect(box).not.toBeNull();
     expect(box.y).toBeGreaterThanOrEqual(-1);
     expect(box.y + box.height).toBeLessThanOrEqual(845);
+
+    await mkdir('storage/test-artifacts/cart-loading-status-quality', { recursive: true });
+    await page.screenshot({
+        path: 'storage/test-artifacts/cart-loading-status-quality/mini-cart-loading-status-390.png',
+        fullPage: false,
+    });
 
     releaseSummary();
     await expect(status).toHaveCount(0);
