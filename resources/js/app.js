@@ -137,6 +137,7 @@ document.addEventListener('alpine:init', () => {
                     body: JSON.stringify({ quantity }),
                 });
                 this.apply(data);
+                Alpine.store('notice').show('تم تحديث كمية القطعة في السلة.');
             } catch (error) {
                 Alpine.store('notice').show(error.message);
             }
