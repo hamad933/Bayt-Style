@@ -43,11 +43,13 @@ for (const viewport of [
         const runtimeFailures = watchRuntime(page);
         await page.goto('/');
 
-        const trigger = page.getByRole('button', { name: 'فتح القائمة' });
+        const trigger = page.locator('.menu-toggle');
         await expect(trigger).toBeVisible();
+        await expect(trigger).toHaveAccessibleName('فتح القائمة');
         await trigger.focus();
         await trigger.press('Enter');
         await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        await expect(trigger).toHaveAccessibleName('إغلاق القائمة');
 
         const navigation = page.getByRole('navigation', { name: 'تنقل الجوال' });
         const firstLink = navigation.getByRole('link', { name: 'المنتجات' });
