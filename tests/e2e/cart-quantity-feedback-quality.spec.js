@@ -26,7 +26,7 @@ async function expectInsideViewport(locator, viewport) {
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
 }
 
-test('[QUALITY][A11Y][CART] item controls have product context and updates are visibly confirmed on mobile', async ({ page }) => {
+test('[QUALITY][A11Y][CART] item controls keep useful focus and feedback on mobile', async ({ page }) => {
     const viewport = { width: 390, height: 844 };
     await page.setViewportSize(viewport);
     const runtimeFailures = watchRuntime(page);
@@ -67,12 +67,29 @@ test('[QUALITY][A11Y][CART] item controls have product context and updates are v
     await expect.poll(async () => toast.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
     await expectInsideViewport(toast, viewport);
 
+    await page.screenshot({
+        path: path.join(outputDir, 'cart-quantity-feedback-390.png'),
+        fullPage: false,
+    });
+
+    await remove.focus();
+    await expect(remove).toBeFocused();
+    await remove.click();
+    await expect(drawer.getByText('لم تضف أي قطعة بعد.')).toBeVisible();
+    const close = drawer.getByRole('button', { name: 'إغلاق السلة' });
+    await expect(close).toBeFocused();
+    await expect(toast).toBeVisible();
+    await expect(toast).toHaveText('تمت إزالة القطعة من السلة.');
+    await expect.poll(async () => toast.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+    await expectInsideViewport(close, viewport);
+    await expectInsideViewport(toast, viewport);
+
     const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(documentWidth).toBeLessThanOrEqual(viewport.width + 1);
     expect(runtimeFailures).toEqual([]);
 
     await page.screenshot({
-        path: path.join(outputDir, 'cart-quantity-feedback-390.png'),
+        path: path.join(outputDir, 'cart-remove-focus-recovery-390.png'),
         fullPage: false,
     });
 });
