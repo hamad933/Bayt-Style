@@ -50,8 +50,9 @@ test('[QUALITY][A11Y][CATALOG] mobile filter drawer traps focus and restores its
     const close = dialog.getByRole('button', { name: 'إغلاق' });
     await expect(close).toBeFocused();
 
-    const overlay = page.locator('.filter-overlay');
-    await expect.poll(async () => overlay.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+    const backdrop = dialog.locator('..');
+    await expect(backdrop).toBeVisible();
+    await expect.poll(async () => backdrop.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
 
     const category = dialog.getByLabel('الفئة');
     const minPrice = dialog.getByLabel('السعر الأدنى');
