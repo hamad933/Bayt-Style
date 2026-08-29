@@ -77,6 +77,10 @@ test('quick add recovers from an expected request rejection and shows the user t
     await expect(quickAdd).toHaveText('أضف إلى السلة');
     await expect(quickAdd).toHaveAttribute('aria-busy', 'false');
 
+    const unexpectedConsoleErrors = consoleErrors.filter(
+        (message) => !message.includes('Failed to load resource: the server responded with a status of 422'),
+    );
+
     expect(pageErrors).toEqual([]);
-    expect(consoleErrors).toEqual([]);
+    expect(unexpectedConsoleErrors).toEqual([]);
 });
