@@ -65,7 +65,7 @@
             <template x-if="!$store.cart.loading && $store.cart.items.length === 0"><p class="empty-note">لم تضف أي قطعة بعد.</p></template>
             <div class="cart-lines" x-show="$store.cart.items.length">
                 <template x-for="item in $store.cart.items" :key="item.variant_id">
-                    <article class="cart-line">
+                    <article class="cart-line" :aria-busy="$store.cart.isItemBusy(item.variant_id).toString()">
                         <img x-show="item.image" :src="item.image" :alt="item.product">
                         <div class="cart-line-copy">
                             <strong x-text="item.product"></strong>
@@ -73,11 +73,12 @@
                             <small dir="ltr" x-text="item.sku"></small>
                             <span><bdi x-text="item.price"></bdi> ر.س</span>
                             <div class="mini-qty" role="group" :aria-label="`كمية ${item.product}`">
-                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity - 1)" :disabled="item.quantity <= 1" :aria-label="`تقليل كمية ${item.product}`">−</button>
+                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity - 1)" :disabled="$store.cart.isItemBusy(item.variant_id) || item.quantity <= 1" :aria-label="`تقليل كمية ${item.product}`">−</button>
                                 <span x-text="item.quantity"></span>
-                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity + 1)" :disabled="item.quantity >= 10" :aria-label="`زيادة كمية ${item.product}`">+</button>
+                                <button type="button" @click="$store.cart.setQuantity(item.variant_id, item.quantity + 1)" :disabled="$store.cart.isItemBusy(item.variant_id) || item.quantity >= 10" :aria-label="`زيادة كمية ${item.product}`">+</button>
                             </div>
-                            <button class="remove-line" type="button" @click="$store.cart.remove(item.variant_id)" :aria-label="`إزالة ${item.product} من السلة`">إزالة</button>
+                            <span class="muted" role="status" aria-live="polite" aria-atomic="true" x-show="$store.cart.isItemBusy(item.variant_id)">جارٍ تحديث هذه القطعة…</span>
+                            <button class="remove-line" type="button" @click="$store.cart.remove(item.variant_id)" :disabled="$store.cart.isItemBusy(item.variant_id)" :aria-label="`إزالة ${item.product} من السلة`">إزالة</button>
                         </div>
                     </article>
                 </template>
