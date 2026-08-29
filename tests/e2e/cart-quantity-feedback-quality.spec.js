@@ -26,7 +26,7 @@ async function expectInsideViewport(locator, viewport) {
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
 }
 
-test('[QUALITY][A11Y][CART] item controls have product context and updates are visibly confirmed on mobile', async ({ page }) => {
+test('[QUALITY][A11Y][CART] item mutations are single-flight and visibly confirmed on mobile', async ({ page }) => {
     const viewport = { width: 390, height: 844 };
     await page.setViewportSize(viewport);
     const runtimeFailures = watchRuntime(page);
@@ -44,19 +44,53 @@ test('[QUALITY][A11Y][CART] item controls have product context and updates are v
 
     const productName = (await drawer.locator('.cart-line-copy > strong').first().textContent())?.trim();
     expect(productName).toBeTruthy();
+    const line = drawer.locator('.cart-line').first();
     const quantity = drawer.getByRole('group', { name: `كمية ${productName}` });
     const quantityValue = quantity.locator('span');
     const decrease = quantity.getByRole('button', { name: `تقليل كمية ${productName}` });
     const increase = quantity.getByRole('button', { name: `زيادة كمية ${productName}` });
     const remove = drawer.getByRole('button', { name: `إزالة ${productName} من السلة` });
+    const itemBusyStatus = line.getByRole('status', { name: '' });
+
     await expect(quantity).toBeVisible();
     await expect(decrease).toBeDisabled();
     await expect(increase).toBeEnabled();
     await expect(remove).toBeVisible();
     await expect(quantityValue).toHaveText('1');
+
+    let patchRequests = 0;
+    await page.route('**/cart/items/*', async (route) => {
+        if (route.request().method() !== 'PATCH') {
+            await route.continue();
+            return;
+        }
+        patchRequests += 1;
+        await new Promise((resolve) => setTimeout(resolve, 350));
+        await route.continue();
+    });
+
     await increase.click();
+    await expect.poll(() => patchRequests).toBe(1);
+    await expect(line).toHaveAttribute('aria-busy', 'true');
+    await expect(increase).toBeDisabled();
+    await expect(remove).toBeDisabled();
+    await expect(itemBusyStatus).toBeVisible();
+    await expect(itemBusyStatus).toHaveText('جارٍ تحديث هذه القطعة…');
+
+    await page.evaluate(() => {
+        const cart = window.Alpine.store('cart');
+        const item = cart.items[0];
+        cart.setQuantity(item.variant_id, item.quantity + 2);
+        cart.remove(item.variant_id);
+    });
+    await expect.poll(() => patchRequests).toBe(1);
+
     await expect(quantityValue).toHaveText('2');
+    await expect(line).toHaveAttribute('aria-busy', 'false');
+    await expect(itemBusyStatus).toBeHidden();
     await expect(decrease).toBeEnabled();
+    await expect(increase).toBeEnabled();
+    await expect(remove).toBeEnabled();
 
     const region = page.locator('.toast-region');
     await expect(region).toHaveAttribute('aria-live', 'polite');
