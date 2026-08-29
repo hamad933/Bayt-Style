@@ -46,6 +46,8 @@
                         this.busy = true;
                         try {
                             await this.$store.cart.add({{ $singleSellableVariant->id }}, 1);
+                        } catch (error) {
+                            this.$store.notice.show(error.message);
                         } finally {
                             this.busy = false;
                         }
