@@ -55,17 +55,20 @@ test('[QUALITY][A11Y][CATALOG] mobile filter drawer traps focus and restores its
     await expect.poll(async () => backdrop.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
 
     const category = dialog.getByLabel('الفئة');
-    const minPrice = dialog.getByLabel('السعر الأدنى');
-    const maxPrice = dialog.getByLabel('السعر الأعلى');
-    const submit = dialog.getByRole('button', { name: 'تطبيق التصفية' });
-    const clear = dialog.getByRole('link', { name: 'مسح الفلاتر' });
+    const room = dialog.getByLabel('الغرفة');
+    const material = dialog.getByLabel('الخامة');
+    const price = dialog.getByLabel('السعر');
+    const submit = dialog.getByRole('button', { name: 'عرض النتائج' });
+    const clear = dialog.getByRole('link', { name: 'مسح الكل' });
 
     await page.keyboard.press('Tab');
     await expect(category).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(minPrice).toBeFocused();
+    await expect(room).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(maxPrice).toBeFocused();
+    await expect(material).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(price).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(submit).toBeFocused();
     await page.keyboard.press('Tab');
