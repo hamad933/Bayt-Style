@@ -39,7 +39,22 @@
             <button
                 type="button"
                 class="product-quick-add"
-                @click="$store.cart.add({{ $singleSellableVariant->id }}, 1)"
+                x-data="{
+                    busy: false,
+                    async add() {
+                        if (this.busy) return;
+                        this.busy = true;
+                        try {
+                            await this.$store.cart.add({{ $singleSellableVariant->id }}, 1);
+                        } finally {
+                            this.busy = false;
+                        }
+                    }
+                }"
+                @click="add"
+                :disabled="busy"
+                :aria-busy="busy.toString()"
+                x-text="busy ? 'جارٍ الإضافة…' : 'أضف إلى السلة'"
                 data-testid="quick-add-{{ $product->id }}"
             >أضف إلى السلة</button>
         @elseif($quickAdd && $sellableVariants->count() > 1)
