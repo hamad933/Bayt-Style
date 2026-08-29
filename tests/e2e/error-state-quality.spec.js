@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 
 fs.mkdirSync('storage/test-artifacts/visual', { recursive: true });
 
+const expectedNavigation404ConsoleError = 'Failed to load resource: the server responded with a status of 404 (Not Found)';
+
 for (const viewport of [
     { name: 'desktop-1440', width: 1440, height: 1000 },
     { name: 'mobile-390', width: 390, height: 844 },
@@ -12,13 +14,22 @@ for (const viewport of [
 
         const pageErrors = [];
         const consoleErrors = [];
+        const unexpectedClientErrors = [];
         const serverErrors = [];
         page.on('pageerror', error => pageErrors.push(error.message));
         page.on('console', message => {
-            if (message.type() === 'error') consoleErrors.push(message.text());
+            if (message.type() === 'error' && message.text() !== expectedNavigation404ConsoleError) {
+                consoleErrors.push(message.text());
+            }
         });
         page.on('response', response => {
-            if (response.status() >= 500) serverErrors.push(`${response.status()} ${response.url()}`);
+            const status = response.status();
+            const resourceType = response.request().resourceType();
+
+            if (status >= 400 && status < 500 && resourceType !== 'document') {
+                unexpectedClientErrors.push(`${status} ${resourceType} ${response.url()}`);
+            }
+            if (status >= 500) serverErrors.push(`${status} ${response.url()}`);
         });
 
         const response = await page.goto('/__rp01_missing_page_quality_probe__');
@@ -48,7 +59,8 @@ for (const viewport of [
         expect(hasOverflow, `404 page must not horizontally overflow at ${viewport.width}px`).toBe(false);
 
         expect(pageErrors, 'page errors').toEqual([]);
-        expect(consoleErrors, 'console errors').toEqual([]);
+        expect(consoleErrors, 'unexpected console errors').toEqual([]);
+        expect(unexpectedClientErrors, 'unexpected non-document HTTP 4xx responses').toEqual([]);
         expect(serverErrors, 'HTTP 5xx responses').toEqual([]);
 
         await page.screenshot({
