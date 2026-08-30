@@ -92,8 +92,11 @@ test('[QUALITY][STATE] wishlist actions expose truthful visible busy states', as
     });
     expect(secondSubmitPrevented).toBe(true);
 
+    const removeBox = await removeButton.boundingBox();
     const statusBox = await status.boundingBox();
+    expect(removeBox).not.toBeNull();
     expect(statusBox).not.toBeNull();
+    expect(statusBox.y).toBeGreaterThanOrEqual(removeBox.y + removeBox.height - 1);
     expect(statusBox.y).toBeGreaterThanOrEqual(-1);
     expect(statusBox.y + statusBox.height).toBeLessThanOrEqual(845);
     const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
