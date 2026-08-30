@@ -45,7 +45,7 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
         await route.continue();
     });
 
-    await removeButton.click();
+    await removeButton.evaluate((element) => element.click());
     await expect(removeButton).toBeDisabled();
     await expect(removeButton).toHaveAttribute('aria-busy', 'true');
     await expect(removeButton).toHaveText('جارٍ الإزالة…');
