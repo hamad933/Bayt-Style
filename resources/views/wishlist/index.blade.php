@@ -58,9 +58,10 @@
                             x-data="comparisonToggle({{ $product->id }}, {{ $compared ? 'true' : 'false' }})"
                             @click="toggle"
                             :aria-pressed="compared.toString()"
+                            :aria-busy="busy.toString()"
                             :disabled="busy"
                             data-testid="wishlist-comparison-toggle"
-                        ><span x-text="compared ? 'إزالة من المقارنة' : 'أضف للمقارنة'">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
+                        ><span x-text="busy ? 'جارٍ التحديث…' : (compared ? 'إزالة من المقارنة' : 'أضف للمقارنة')">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
                         <form
                             action="{{ route('wishlist.destroy', $product) }}"
                             method="post"
