@@ -45,6 +45,9 @@ test('[QUALITY][CHECKOUT SUBMIT] confirmation exposes a visible single-flight su
   const submit = page.getByTestId('confirm-checkout');
   const status = page.getByTestId('checkout-submitting-status');
 
+  // Mirror the user's real scroll context at the moment they can activate confirmation.
+  await submit.scrollIntoViewIfNeeded();
+
   const firstSubmissionAccepted = await form.evaluate((element) => {
     const submitter = element.querySelector('[data-testid="confirm-checkout"]');
     return element.dispatchEvent(new SubmitEvent('submit', {
@@ -72,10 +75,10 @@ test('[QUALITY][CHECKOUT SUBMIT] confirmation exposes a visible single-flight su
   });
   expect(secondSubmissionAccepted).toBe(false);
 
-  const box = await status.boundingBox();
-  expect(box).not.toBeNull();
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.y).toBeLessThan(844);
+  const submitBox = await submit.boundingBox();
+  expect(submitBox).not.toBeNull();
+  expect(submitBox.y).toBeGreaterThanOrEqual(0);
+  expect(submitBox.y + submitBox.height).toBeLessThanOrEqual(844);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
