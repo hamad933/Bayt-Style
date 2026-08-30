@@ -79,8 +79,13 @@ test('[QUALITY][S08 RETURN SUBMIT] eligible return request exposes a visible sin
   const form = page.getByTestId('return-request-form');
   const submit = page.getByTestId('start-return');
   const status = page.getByTestId('return-submitting-status');
+  const quantity = page.getByLabel('كمية المرتجع');
+  const reason = page.getByLabel('سبب المرتجع');
   await expect(form).toBeVisible();
   await submit.scrollIntoViewIfNeeded();
+
+  const initialQuantity = await quantity.inputValue();
+  const initialReason = await reason.inputValue();
 
   const firstSubmissionAccepted = await form.evaluate((element) => {
     const submitter = element.querySelector('[data-testid="start-return"]');
@@ -98,8 +103,13 @@ test('[QUALITY][S08 RETURN SUBMIT] eligible return request exposes a visible sin
   await expect(submit).toHaveText('جارٍ تسجيل طلب المرتجع…');
   await expect(status).toBeVisible();
   await expect(status).toHaveText('جارٍ تسجيل طلب المرتجع. يرجى عدم إعادة الإرسال.');
-  await expect(page.getByLabel('كمية المرتجع')).toBeDisabled();
-  await expect(page.getByLabel('سبب المرتجع')).toBeDisabled();
+  await expect(quantity).toBeEnabled();
+  await expect(reason).toBeEnabled();
+
+  const submittedPayload = await form.evaluate((element) => Object.fromEntries(new FormData(element).entries()));
+  expect(submittedPayload.quantity).toBe(initialQuantity);
+  expect(submittedPayload.reason).toBe(initialReason);
+  expect(submittedPayload.line_ref).toBeTruthy();
 
   const secondSubmissionAccepted = await form.evaluate((element) => {
     const submitter = element.querySelector('[data-testid="start-return"]');
