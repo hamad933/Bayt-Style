@@ -49,5 +49,46 @@ function syncOrderDetailSequence() {
     clearCompactOverrides(paymentPanel);
 }
 
+function installSensitiveSubmitState(form) {
+    if (!form || form.dataset.submitStateReady === 'true') return;
+    form.dataset.submitStateReady = 'true';
+    form.setAttribute('aria-busy', 'false');
+
+    const submitButton = form.querySelector('button[type="submit"], button:not([type])');
+    if (!submitButton) return;
+
+    const idleLabel = submitButton.textContent.trim();
+    const status = document.createElement('p');
+    status.className = 's10-submit-status';
+    status.hidden = true;
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    status.setAttribute('aria-atomic', 'true');
+    status.textContent = 'جارٍ تنفيذ الإجراء…';
+    form.append(status);
+
+    form.addEventListener('submit', (event) => {
+        if (form.dataset.submitting === 'true') {
+            event.preventDefault();
+            return;
+        }
+
+        form.dataset.submitting = 'true';
+        form.setAttribute('aria-busy', 'true');
+        submitButton.disabled = true;
+        submitButton.setAttribute('aria-busy', 'true');
+        submitButton.dataset.idleLabel = idleLabel;
+        submitButton.textContent = 'جارٍ التنفيذ…';
+        status.hidden = false;
+    });
+}
+
+function installSensitiveSubmitStates() {
+    for (const form of document.querySelectorAll('.s10-sensitive-form, .s10-inline-action')) {
+        installSensitiveSubmitState(form);
+    }
+}
+
 syncOrderDetailSequence();
+installSensitiveSubmitStates();
 compactOrderDetail.addEventListener('change', syncOrderDetailSequence);
