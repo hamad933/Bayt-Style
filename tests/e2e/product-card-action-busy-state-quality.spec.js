@@ -14,6 +14,18 @@ function collectRuntimeFailures(page) {
     return { pageErrors, consoleErrors, serverErrors };
 }
 
+async function expectInsideViewport(page, locator) {
+    const box = await locator.boundingBox();
+    expect(box).not.toBeNull();
+
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+}
+
 test('product-card wishlist exposes a visible truthful busy state and suppresses duplicate toggles', async ({ page }) => {
     const failures = collectRuntimeFailures(page);
     let requests = 0;
@@ -38,6 +50,7 @@ test('product-card wishlist exposes a visible truthful busy state and suppresses
     await expect(wishlist).toHaveAccessibleName(/جارٍ تحديث مفضلة/);
     await expect(wishlist).toContainText('…');
     await wishlist.scrollIntoViewIfNeeded();
+    await expectInsideViewport(page, wishlist);
     await page.screenshot({ path: 'storage/test-artifacts/product-card-wishlist-busy-390.png', fullPage: false });
 
     await wishlist.dispatchEvent('click');
@@ -75,6 +88,7 @@ test('product-card comparison exposes a visible truthful busy state and suppress
     await expect(comparison).toHaveAttribute('aria-busy', 'true');
     await expect(comparison).toContainText('جارٍ التحديث…');
     await comparison.scrollIntoViewIfNeeded();
+    await expectInsideViewport(page, comparison);
     await page.screenshot({ path: 'storage/test-artifacts/product-card-comparison-busy-390.png', fullPage: false });
 
     await comparison.dispatchEvent('click');
