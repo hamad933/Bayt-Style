@@ -13,7 +13,7 @@ function watchRuntime(page) {
     return failures;
 }
 
-test('[QUALITY][STATE] wishlist removal exposes one truthful visible submitting state', async ({ page }) => {
+test('[QUALITY][STATE] wishlist actions expose truthful visible busy states', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const runtimeFailures = watchRuntime(page);
 
@@ -27,6 +27,38 @@ test('[QUALITY][STATE] wishlist removal exposes one truthful visible submitting 
     }
 
     await page.goto('/wishlist');
+    await mkdir('storage/test-artifacts/wishlist-removal-submitting-state-quality', { recursive: true });
+
+    let comparisonRequests = 0;
+    await page.route('**/comparison/*', async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        comparisonRequests += 1;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ count: 1, limit: 3, already_present: false }),
+        });
+    });
+
+    const comparisonButton = page.getByTestId('wishlist-comparison-toggle').first();
+    await expect(comparisonButton).toBeVisible();
+    await expect(comparisonButton).toHaveAttribute('aria-busy', 'false');
+    await comparisonButton.click();
+    await expect(comparisonButton).toBeDisabled();
+    await expect(comparisonButton).toHaveAttribute('aria-busy', 'true');
+    await expect(comparisonButton).toHaveText('جارٍ التحديث…');
+    await comparisonButton.scrollIntoViewIfNeeded();
+    await page.screenshot({
+        path: 'storage/test-artifacts/wishlist-removal-submitting-state-quality/wishlist-comparison-busy-390.png',
+        fullPage: false,
+    });
+    await comparisonButton.dispatchEvent('click');
+    await expect.poll(() => comparisonRequests).toBe(1);
+    await expect(comparisonButton).toBeEnabled();
+    await expect(comparisonButton).toHaveAttribute('aria-busy', 'false');
+    await expect(comparisonButton).toHaveAttribute('aria-pressed', 'true');
+
     const removeButton = page.getByTestId('wishlist-remove-submit').first();
     await expect(removeButton).toBeVisible();
     await removeButton.scrollIntoViewIfNeeded();
@@ -67,7 +99,6 @@ test('[QUALITY][STATE] wishlist removal exposes one truthful visible submitting 
     const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
     expect(hasHorizontalOverflow).toBe(false);
 
-    await mkdir('storage/test-artifacts/wishlist-removal-submitting-state-quality', { recursive: true });
     await page.screenshot({
         path: 'storage/test-artifacts/wishlist-removal-submitting-state-quality/wishlist-remove-submitting-390.png',
         fullPage: false,
