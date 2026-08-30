@@ -43,15 +43,17 @@
                                 <div><dt>إجمالي السطر</dt><dd data-testid="line-total"><bdi>{{ $item['line_total'] }}</bdi> ر.س</dd></div>
                             </dl>
                             <div class="s06-line-actions">
-                                <form method="post" action="{{ route('cart.update', $item['variant_id']) }}">
+                                <form method="post" action="{{ route('cart.update', $item['variant_id']) }}" x-data="{ busy: false }" x-bind:aria-busy="busy.toString()" x-on:submit="if (busy) { $event.preventDefault(); return; } busy = true">
                                     @csrf @method('PATCH')
                                     <label for="quantity-{{ $item['variant_id'] }}">الكمية</label>
                                     <input id="quantity-{{ $item['variant_id'] }}" name="quantity" type="number" min="1" max="10" value="{{ $item['quantity'] }}" inputmode="numeric">
-                                    <button class="text-action" type="submit">تحديث</button>
+                                    <button class="text-action" type="submit" x-bind:disabled="busy" x-bind:aria-busy="busy.toString()" x-text="busy ? 'جارٍ التحديث…' : 'تحديث'">تحديث</button>
+                                    <span role="status" aria-live="polite" x-show="busy" x-cloak>جارٍ تحديث الكمية…</span>
                                 </form>
-                                <form method="post" action="{{ route('cart.destroy', $item['variant_id']) }}">
+                                <form method="post" action="{{ route('cart.destroy', $item['variant_id']) }}" x-data="{ busy: false }" x-bind:aria-busy="busy.toString()" x-on:submit="if (busy) { $event.preventDefault(); return; } busy = true">
                                     @csrf @method('DELETE')
-                                    <button class="s06-remove" type="submit">إزالة</button>
+                                    <button class="s06-remove" type="submit" x-bind:disabled="busy" x-bind:aria-busy="busy.toString()" x-text="busy ? 'جارٍ الإزالة…' : 'إزالة'">إزالة</button>
+                                    <span role="status" aria-live="polite" x-show="busy" x-cloak>جارٍ إزالة القطعة…</span>
                                 </form>
                             </div>
                         </div>
