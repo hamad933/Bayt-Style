@@ -62,7 +62,11 @@
                             <div class="s08-line-action">
                                 @if($line['eligible'])
                                     <p class="s08-available">{{ $line['eligibility_detail'] }}</p>
-                                    <form method="POST" action="{{ route('orders.returns.store', $order) }}" class="s08-return-form">
+                                    <form method="POST" action="{{ route('orders.returns.store', $order) }}" class="s08-return-form"
+                                          x-data="{ submitting: false }"
+                                          @submit="if (submitting) { $event.preventDefault(); return; } submitting = true"
+                                          :aria-busy="submitting.toString()"
+                                          data-testid="return-request-form">
                                         @csrf
                                         <input type="hidden" name="line_ref" value="{{ $line['sku'] }}">
                                         <label>
@@ -81,7 +85,13 @@
                                                 @endforeach
                                             </select>
                                         </label>
-                                        <button class="button button-primary" type="submit" data-testid="start-return">بدء طلب المرتجع</button>
+                                        <button class="button button-primary" type="submit" data-testid="start-return"
+                                                :disabled="submitting" :aria-busy="submitting.toString()"
+                                                x-text="submitting ? 'جارٍ تسجيل طلب المرتجع…' : 'بدء طلب المرتجع'">بدء طلب المرتجع</button>
+                                        <p class="s08-muted" role="status" aria-live="polite" aria-atomic="true"
+                                           x-show="submitting" x-cloak data-testid="return-submitting-status">
+                                            جارٍ تسجيل طلب المرتجع. يرجى عدم إعادة الإرسال.
+                                        </p>
                                     </form>
                                 @else
                                     <p class="s08-unavailable" data-testid="line-return-unavailable">{{ $line['eligibility_detail'] }}</p>
