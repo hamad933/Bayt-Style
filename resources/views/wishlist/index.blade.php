@@ -61,10 +61,32 @@
                             :disabled="busy"
                             data-testid="wishlist-comparison-toggle"
                         ><span x-text="compared ? 'إزالة من المقارنة' : 'أضف للمقارنة'">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
-                        <form action="{{ route('wishlist.destroy', $product) }}" method="post">
+                        <form
+                            action="{{ route('wishlist.destroy', $product) }}"
+                            method="post"
+                            x-data="{ submitting: false }"
+                            @submit="if (submitting) { $event.preventDefault() } else { submitting = true }"
+                            :aria-busy="submitting.toString()"
+                            data-testid="wishlist-remove-form"
+                        >
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="remove-line">إزالة من المفضلة</button>
+                            <button
+                                type="submit"
+                                class="remove-line"
+                                :disabled="submitting"
+                                :aria-busy="submitting.toString()"
+                                data-testid="wishlist-remove-submit"
+                            ><span x-text="submitting ? 'جارٍ الإزالة…' : 'إزالة من المفضلة'">إزالة من المفضلة</span></button>
+                            <span
+                                class="surface-status"
+                                x-show="submitting"
+                                x-cloak
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                                data-testid="wishlist-remove-status"
+                            >جارٍ إزالة القطعة من المفضلة…</span>
                         </form>
                     </div>
                 </article>
