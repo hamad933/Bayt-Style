@@ -17,7 +17,7 @@
             <p>نعرض فقط حقائق موجودة في بيانات المنتج الحالية، بحد أقصى {{ $comparisonLimit }} منتجات حتى تبقى المقارنة واضحة على الشاشات الصغيرة.</p>
         </div>
         @if($products->isNotEmpty())
-            <form action="{{ route('comparison.clear') }}" method="post" x-data="{ submitting: false }" @submit="if (submitting) { $event.preventDefault(); return; } submitting = true" :aria-busy="submitting ? 'true' : 'false'">
+            <form action="{{ route('comparison.clear') }}" method="post" x-data="{ submitting: false }" @submit="if (submitting) { $event.preventDefault() } else { submitting = true }" :aria-busy="submitting ? 'true' : 'false'">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="text-link comparison-clear" :disabled="submitting" :aria-busy="submitting ? 'true' : 'false'" x-text="submitting ? 'جارٍ مسح المقارنة…' : 'مسح المقارنة'">مسح المقارنة</button>
@@ -62,7 +62,7 @@
                     </dl>
                     <div class="comparison-item-actions">
                         <a class="text-link" href="{{ route('products.show', $product) }}">عرض المنتج</a>
-                        <form action="{{ route('comparison.destroy', $product) }}" method="post" x-data="{ submitting: false }" @submit="if (submitting) { $event.preventDefault(); return; } submitting = true" :aria-busy="submitting ? 'true' : 'false'">
+                        <form action="{{ route('comparison.destroy', $product) }}" method="post" x-data="{ submitting: false }" @submit="if (submitting) { $event.preventDefault() } else { submitting = true }" :aria-busy="submitting ? 'true' : 'false'">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="remove-line" data-testid="comparison-remove" :disabled="submitting" :aria-busy="submitting ? 'true' : 'false'" x-text="submitting ? 'جارٍ الإزالة…' : 'إزالة من المقارنة'">إزالة من المقارنة</button>
