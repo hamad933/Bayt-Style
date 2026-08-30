@@ -25,10 +25,11 @@ test('[QUALITY][ADMIN LOGIN] login exposes a visible single-flight submitting st
   const form = page.locator('.admin-login-card form');
   const email = page.getByLabel('البريد الإلكتروني');
   const password = page.getByLabel('كلمة المرور');
-  const submit = page.getByRole('button', { name: 'دخول آمن' });
+  const submit = form.locator('button[type="submit"]');
 
   await email.fill('admin-quality@example.test');
   await password.fill('quality-only-password');
+  await expect(submit).toHaveText('دخول آمن');
   await submit.scrollIntoViewIfNeeded();
 
   const firstSubmissionAccepted = await form.evaluate((element) => {
