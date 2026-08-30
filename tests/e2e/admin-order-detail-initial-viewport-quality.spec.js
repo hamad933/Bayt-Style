@@ -41,6 +41,9 @@ async function expectInsideInitialViewport(locator, viewport) {
 
 for (const viewport of [
     { name: 'desktop-1440', width: 1440, height: 1000 },
+    { name: 'tablet-820', width: 820, height: 1000 },
+    { name: 'tablet-768', width: 768, height: 1024 },
+    { name: 'mobile-430', width: 430, height: 932 },
     { name: 'mobile-390', width: 390, height: 844 },
 ]) {
     test(`S10 admin order detail exposes primary truth in initial viewport ${viewport.name}`, async ({ page }) => {
