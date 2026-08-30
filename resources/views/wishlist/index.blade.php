@@ -79,7 +79,7 @@
                                 :aria-busy="submitting.toString()"
                                 data-testid="wishlist-remove-submit"
                             ><span x-text="submitting ? 'جارٍ الإزالة…' : 'إزالة من المفضلة'">إزالة من المفضلة</span></button>
-                            <span
+                            <p
                                 class="surface-status"
                                 x-show="submitting"
                                 x-cloak
@@ -87,7 +87,7 @@
                                 aria-live="polite"
                                 aria-atomic="true"
                                 data-testid="wishlist-remove-status"
-                            >جارٍ إزالة القطعة من المفضلة…</span>
+                            >جارٍ إزالة القطعة من المفضلة…</p>
                         </form>
                     </div>
                 </article>
