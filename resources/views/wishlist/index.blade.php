@@ -58,13 +58,36 @@
                             x-data="comparisonToggle({{ $product->id }}, {{ $compared ? 'true' : 'false' }})"
                             @click="toggle"
                             :aria-pressed="compared.toString()"
+                            :aria-busy="busy.toString()"
                             :disabled="busy"
                             data-testid="wishlist-comparison-toggle"
-                        ><span x-text="compared ? 'إزالة من المقارنة' : 'أضف للمقارنة'">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
-                        <form action="{{ route('wishlist.destroy', $product) }}" method="post">
+                        ><span x-text="busy ? 'جارٍ التحديث…' : (compared ? 'إزالة من المقارنة' : 'أضف للمقارنة')">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
+                        <form
+                            action="{{ route('wishlist.destroy', $product) }}"
+                            method="post"
+                            x-data="{ submitting: false }"
+                            @submit="if (submitting) { $event.preventDefault() } else { submitting = true }"
+                            :aria-busy="submitting.toString()"
+                            data-testid="wishlist-remove-form"
+                        >
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="remove-line">إزالة من المفضلة</button>
+                            <button
+                                type="submit"
+                                class="remove-line"
+                                :disabled="submitting"
+                                :aria-busy="submitting.toString()"
+                                data-testid="wishlist-remove-submit"
+                            ><span x-text="submitting ? 'جارٍ الإزالة…' : 'إزالة من المفضلة'">إزالة من المفضلة</span></button>
+                            <p
+                                class="surface-status"
+                                x-show="submitting"
+                                x-cloak
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                                data-testid="wishlist-remove-status"
+                            >جارٍ إزالة القطعة من المفضلة…</p>
                         </form>
                     </div>
                 </article>
