@@ -10,10 +10,10 @@ function watchRuntime(page) {
   const failures = [];
   page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') failures.push(`console.error: ${message.text()}`));
+    if (message.type() === 'error') failures.push(`console.error: ${message.text()}`);
   });
   page.on('response', (response) => {
-    if (response.status() >= 500) failures.push(`HTTP ${response.status()}: ${response.url()}`));
+    if (response.status() >= 500) failures.push(`HTTP ${response.status()}: ${response.url()}`);
   });
   return failures;
 }
@@ -44,17 +44,17 @@ function grantEligibility(orderNumber) {
   const bootstrap = String.raw`
     require 'vendor/autoload.php';
     $app = require 'bootstrap/app.php';
-    $app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
-    $order = App\\Models\\Order::query()->where('order_number', $argv[1])->firstOrFail();
+    $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+    $order = App\Models\Order::query()->where('order_number', $argv[1])->firstOrFail();
     $line = $order->lines()->firstOrFail();
-    App\\Models\\ReturnEligibility::query()->create([
+    App\Models\ReturnEligibility::query()->create([
       'order_id' => $order->id,
       'order_line_id' => $line->id,
       'eligible_quantity' => $line->quantity,
       'state' => 'active',
       'source_type' => 'authoritative_return_state',
       'source_reference' => 'E2E-SINGLE-SUBMIT-'.$order->order_number,
-      'correlation_id' => (string) Illuminate\\Support\\Str::uuid(),
+      'correlation_id' => (string) Illuminate\Support\Str::uuid(),
       'recorded_at' => now(),
     ]);
   `;
