@@ -93,23 +93,21 @@
                 </button>
             </div>
 
-            <div class="detail-secondary-actions">
+            <div class="detail-secondary-actions" x-data="comparisonToggle({{ $product->id }}, {{ $compared ? 'true' : 'false' }})">
                 <button type="button" class="detail-wishlist" @click="toggleWishlist" :aria-pressed="saved.toString()" :aria-busy="wishlistBusy.toString()" :disabled="wishlistBusy" data-testid="detail-wishlist">
                     <span x-text="saved ? '♥' : '♡'">{{ $saved ? '♥' : '♡' }}</span>
                     <span x-text="wishlistBusy ? 'جارٍ التحديث…' : (saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة')">{{ $saved ? 'محفوظ في المفضلة' : 'حفظ في المفضلة' }}</span>
                 </button>
-                <div x-data="comparisonToggle({{ $product->id }}, {{ $compared ? 'true' : 'false' }})">
-                    <button
-                        type="button"
-                        class="detail-compare"
-                        @click="toggle"
-                        :aria-pressed="compared.toString()"
-                        :aria-busy="busy.toString()"
-                        :disabled="busy"
-                        data-testid="detail-comparison"
-                    ><span x-text="busy ? 'جارٍ التحديث…' : (compared ? 'إزالة من المقارنة' : 'أضف للمقارنة')">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
-                    <span role="status" aria-live="polite" x-show="busy" x-cloak>جارٍ تحديث المقارنة…</span>
-                </div>
+                <button
+                    type="button"
+                    class="detail-compare"
+                    @click="toggle"
+                    :aria-pressed="compared.toString()"
+                    :aria-busy="busy.toString()"
+                    :disabled="busy"
+                    data-testid="detail-comparison"
+                ><span x-text="busy ? 'جارٍ التحديث…' : (compared ? 'إزالة من المقارنة' : 'أضف للمقارنة')">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
+                <span role="status" aria-live="polite" x-show="busy" x-cloak>جارٍ تحديث المقارنة…</span>
             </div>
             <p class="inventory-boundary">إضافة القطعة إلى السلة لا تعني حجز المخزون.</p>
 
