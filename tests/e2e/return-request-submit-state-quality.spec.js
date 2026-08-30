@@ -126,6 +126,11 @@ test('[QUALITY][S08 RETURN SUBMIT] eligible return request exposes a visible sin
   expect(submitBox.y).toBeGreaterThanOrEqual(0);
   expect(submitBox.y + submitBox.height).toBeLessThanOrEqual(844);
 
+  const statusBox = await status.boundingBox();
+  expect(statusBox).not.toBeNull();
+  expect(statusBox.y).toBeGreaterThanOrEqual(0);
+  expect(statusBox.y + statusBox.height).toBeLessThanOrEqual(844);
+
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   expect(runtimeFailures).toEqual([]);
