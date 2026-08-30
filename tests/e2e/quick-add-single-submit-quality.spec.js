@@ -88,6 +88,7 @@ test('quick add recovers from an expected request rejection and shows the user t
     const toast = page.locator('.toast');
     await expect(toast).toBeVisible();
     await expect(toast).toHaveText('تعذر إضافة القطعة الآن.');
+    await expect.poll(() => toast.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
     await expectInsideViewport(page, toast);
     await page.screenshot({ path: 'storage/test-artifacts/quick-add-error-390.png', fullPage: false });
     await expect(quickAdd).toBeEnabled();
