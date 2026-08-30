@@ -84,7 +84,7 @@ function installSensitiveSubmitState(form) {
 }
 
 function installSensitiveSubmitStates() {
-    for (const form of document.querySelectorAll('.s10-sensitive-form, .s10-inline-action')) {
+    for (const form of document.querySelectorAll('.admin-main form[method="post"]')) {
         installSensitiveSubmitState(form);
     }
 }
