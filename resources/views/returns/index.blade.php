@@ -71,7 +71,7 @@
                                         <input type="hidden" name="line_ref" value="{{ $line['sku'] }}">
                                         <label>
                                             <span>الكمية</span>
-                                            <select name="quantity" aria-label="كمية المرتجع" :disabled="submitting">
+                                            <select name="quantity" aria-label="كمية المرتجع">
                                                 @for($quantity = 1; $quantity <= $line['eligible_quantity']; $quantity++)
                                                     <option value="{{ $quantity }}">{{ $quantity }}</option>
                                                 @endfor
@@ -79,7 +79,7 @@
                                         </label>
                                         <label>
                                             <span>السبب</span>
-                                            <select name="reason" aria-label="سبب المرتجع" :disabled="submitting">
+                                            <select name="reason" aria-label="سبب المرتجع">
                                                 @foreach($returns['reasons'] as $value => $label)
                                                     <option value="{{ $value }}">{{ $label }}</option>
                                                 @endforeach
