@@ -16,7 +16,10 @@
         </div>
     @endif
 
-    <form method="post" action="{{ route('checkout.store') }}" class="checkout-form" data-testid="checkout-form">
+    <form method="post" action="{{ route('checkout.store') }}" class="checkout-form" data-testid="checkout-form"
+        x-data="{ submitting: false }"
+        @submit="if (submitting) { $event.preventDefault(); return; } submitting = true"
+        :aria-busy="submitting.toString()">
         @csrf
         <input type="hidden" name="checkout_token" value="{{ $token }}">
         <div class="checkout-main">
@@ -121,7 +124,10 @@
                 <div class="grand-total"><dt>الإجمالي</dt><dd data-testid="checkout-total"><bdi>{{ number_format($totals['total_minor']/100,0) }}</bdi> ر.س</dd></div>
             </dl>
             <p class="s06-policy-code">لا تُضاف ضريبة نهائية في التجربة الحالية؛ ستعتمد الضريبة النهائية على السياسة المعتمدة عند التفعيل.</p>
-            <button class="button button-primary checkout-submit" type="submit" data-testid="confirm-checkout">تأكيد الطلب</button>
+            <button class="button button-primary checkout-submit" type="submit" data-testid="confirm-checkout"
+                :disabled="submitting" :aria-busy="submitting.toString()"
+                x-text="submitting ? 'جارٍ تأكيد الطلب…' : 'تأكيد الطلب'">تأكيد الطلب</button>
+            <p class="s06-boundary-note" role="status" aria-live="polite" aria-atomic="true" x-show="submitting" x-cloak data-testid="checkout-submitting-status">جارٍ إرسال الطلب. يرجى عدم إغلاق الصفحة أو إعادة الإرسال.</p>
             <p class="s06-boundary-note">لن يحجز هذا التأكيد المخزون، ولن يثبت الدفع أو حجز الشحنة. سنحتفظ بتفاصيل الطلب كما ظهرت لك عند التأكيد.</p>
         </aside>
     </form>
