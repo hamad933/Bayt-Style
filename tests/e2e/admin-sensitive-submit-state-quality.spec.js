@@ -46,17 +46,28 @@ test('[QUALITY][STATE] S10 sensitive admin action exposes a truthful single-flig
     await expect(button).toBeVisible();
     await expect(form).toHaveAttribute('aria-busy', 'false');
 
+    await page.evaluate(() => {
+        const frame = document.createElement('iframe');
+        frame.name = 'rp01-sensitive-submit-target';
+        frame.hidden = true;
+        document.body.append(frame);
+    });
+    await form.evaluate((node) => node.setAttribute('target', 'rp01-sensitive-submit-target'));
+
     let requests = 0;
+    let releaseRequest;
+    const requestRelease = new Promise((resolve) => { releaseRequest = resolve; });
     await page.route('**/admin/orders/BAS-S10-EVIDENCE/cancel', async (route) => {
         if (route.request().method() !== 'POST') return route.continue();
         requests += 1;
-        await new Promise((resolve) => setTimeout(resolve, 900));
+        await requestRelease;
         await route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><html lang="ar" dir="rtl"><body>ok</body></html>' });
     });
 
     await form.getByLabel('سبب القرار').fill('اختبار حالة الإرسال المصرح بها');
-    await button.click({ noWaitAfter: true });
+    await button.click();
 
+    await expect.poll(() => requests).toBe(1);
     await expect(form).toHaveAttribute('aria-busy', 'true');
     await expect(button).toBeDisabled();
     await expect(button).toHaveAttribute('aria-busy', 'true');
@@ -85,4 +96,6 @@ test('[QUALITY][STATE] S10 sensitive admin action exposes a truthful single-flig
         path: 'storage/test-artifacts/admin-sensitive-submit-state-quality/s10-admin-sensitive-busy-390.png',
         fullPage: false,
     });
+
+    releaseRequest();
 });
