@@ -53,9 +53,9 @@ test('[QUALITY][STATE][PDP] comparison toggle is single-flight and visibly busy 
     await expect.poll(() => requests).toBe(1);
     await expect(button).toBeDisabled();
     await expect(button).toHaveAttribute('aria-busy', 'true');
-    await expect(button).toContainText('جارٍ التحديث…');
+    await expect(button).toContainText('جارٍ تحديث المقارنة…');
 
-    const status = page.getByRole('status', { name: '' }).filter({ hasText: 'جارٍ تحديث المقارنة…' });
+    const status = button.locator('[role="status"]').filter({ hasText: 'جارٍ تحديث المقارنة…' });
     await expect(status).toBeVisible();
     const box = await status.boundingBox();
     expect(box).not.toBeNull();
