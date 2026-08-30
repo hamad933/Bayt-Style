@@ -7,6 +7,7 @@ from typing import Any, Mapping
 SCHEMA_VERSION = "rp01.automation.request/v1"
 PROJECT_ID = "RP01"
 REPOSITORY = "hamad933/Bayt-Style"
+CONTROLLER_ID = "CENTRAL"
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$")
 
@@ -16,27 +17,31 @@ RECONCILIATION_ACTIONS = frozenset({"reconcile_create_session", "reconcile_send_
 ACTIONS = READ_ACTIONS | MUTATION_ACTIONS | RECONCILIATION_ACTIONS
 
 COMMON_REQUIRED = {
-    "schema_version", "request_id", "project_id", "controller_id", "logical_task_id",
-    "action", "repository",
+    "schema_version", "request_id", "project_id", "controller_id", "logical_task_id", "action", "repository",
 }
-COMMON_OPTIONAL = {
-    "write_domain", "starting_branch", "expected_sha", "session_id",
-    "expected_session_state", "expected_session_update_time", "instruction_ref",
-    "instruction_digest", "authority_ref", "authority_event", "target_request_id",
-    "target_intent_identity", "prompt", "require_plan_approval",
+ACTION_FIELDS = {
+    "list_sources": set(),
+    "list_sessions": set(),
+    "get_session": {"session_id"},
+    "list_activities": {"session_id"},
+    "create_session": {"write_domain", "starting_branch", "expected_sha", "prompt", "require_plan_approval", "authority_ref", "authority_event", "instruction_ref", "instruction_digest"},
+    "send_message": {"write_domain", "session_id", "expected_session_state", "expected_session_update_time", "prompt", "authority_ref", "authority_event", "instruction_ref", "instruction_digest"},
+    "approve_plan": {"write_domain", "session_id", "expected_session_state", "expected_session_update_time", "authority_ref", "authority_event"},
+    "reconcile_create_session": {"write_domain", "target_request_id", "target_intent_identity", "authority_ref", "authority_event"},
+    "reconcile_send_message": {"write_domain", "session_id", "target_request_id", "target_intent_identity", "authority_ref", "authority_event"},
+    "reconcile_approve_plan": {"write_domain", "session_id", "target_request_id", "target_intent_identity", "authority_ref", "authority_event"},
 }
-
 ACTION_REQUIRED = {
     "list_sources": set(),
     "list_sessions": set(),
     "get_session": {"session_id"},
     "list_activities": {"session_id"},
-    "create_session": {"write_domain", "starting_branch", "expected_sha", "prompt"},
-    "send_message": {"write_domain", "session_id", "expected_session_state", "expected_session_update_time", "prompt"},
-    "approve_plan": {"write_domain", "session_id", "expected_session_state", "expected_session_update_time"},
-    "reconcile_create_session": {"write_domain", "target_request_id", "target_intent_identity"},
-    "reconcile_send_message": {"write_domain", "session_id", "target_request_id", "target_intent_identity"},
-    "reconcile_approve_plan": {"write_domain", "session_id", "target_request_id", "target_intent_identity"},
+    "create_session": {"write_domain", "starting_branch", "expected_sha", "prompt", "require_plan_approval", "authority_ref"},
+    "send_message": {"write_domain", "session_id", "expected_session_state", "expected_session_update_time", "prompt", "authority_ref"},
+    "approve_plan": {"write_domain", "session_id", "expected_session_state", "expected_session_update_time", "authority_ref"},
+    "reconcile_create_session": {"write_domain", "target_request_id", "target_intent_identity", "authority_ref"},
+    "reconcile_send_message": {"write_domain", "session_id", "target_request_id", "target_intent_identity", "authority_ref"},
+    "reconcile_approve_plan": {"write_domain", "session_id", "target_request_id", "target_intent_identity", "authority_ref"},
 }
 
 
@@ -78,10 +83,10 @@ def validate_request(payload: Mapping[str, Any]) -> ValidatedRequest:
     if action not in ACTIONS:
         raise RequestValidationError("unsupported action")
 
-    allowed = COMMON_REQUIRED | COMMON_OPTIONAL
+    allowed = COMMON_REQUIRED | ACTION_FIELDS[action]
     unknown = set(data) - allowed
     if unknown:
-        raise RequestValidationError(f"unknown keys: {','.join(sorted(unknown))}")
+        raise RequestValidationError(f"keys not allowed for {action}: {','.join(sorted(unknown))}")
 
     action_missing = ACTION_REQUIRED[action] - data.keys()
     if action_missing:
@@ -93,6 +98,8 @@ def validate_request(payload: Mapping[str, Any]) -> ValidatedRequest:
         raise RequestValidationError("project_id mismatch")
     if data["repository"] != REPOSITORY:
         raise RequestValidationError("repository mismatch")
+    if data["controller_id"] != CONTROLLER_ID:
+        raise RequestValidationError("controller_id mismatch")
 
     for key in ("request_id", "controller_id", "logical_task_id"):
         _require_safe_id(key, data[key])
@@ -100,7 +107,7 @@ def validate_request(payload: Mapping[str, Any]) -> ValidatedRequest:
         if key in data and data[key] not in ("", None):
             _require_safe_id(key, data[key])
 
-    if "expected_sha" in data and data["expected_sha"] not in ("", None):
+    if "expected_sha" in data:
         if not isinstance(data["expected_sha"], str) or not SHA40.fullmatch(data["expected_sha"]):
             raise RequestValidationError("expected_sha must be lowercase 40-character hex")
 
@@ -112,10 +119,7 @@ def validate_request(payload: Mapping[str, Any]) -> ValidatedRequest:
         if not isinstance(data["instruction_digest"], str) or not re.fullmatch(r"[0-9a-f]{64}", data["instruction_digest"]):
             raise RequestValidationError("instruction_digest must be sha256 hex")
 
-    if action == "create_session" and data.get("require_plan_approval") is not True:
+    if action == "create_session" and data["require_plan_approval"] is not True:
         raise RequestValidationError("create_session requires require_plan_approval=true")
-
-    if action in MUTATION_ACTIONS and not data.get("authority_ref"):
-        raise RequestValidationError("mutation requires authority_ref")
 
     return ValidatedRequest(data)

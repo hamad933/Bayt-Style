@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from .evidence import write_json
 from .identity import effect_key, intent_identity, request_key
@@ -12,6 +14,44 @@ from .schema import READ_ACTIONS, RequestValidationError, validate_request
 
 def _load_request(path: str) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _pick(obj: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
+    return {key: obj[key] for key in keys if key in obj}
+
+
+def _provider_summary(action: str, provider: dict[str, Any]) -> dict[str, Any]:
+    """Return evidence-safe provider metadata; never persist prompts/agent message text."""
+    session_keys = ("name", "id", "state", "createTime", "updateTime")
+    activity_keys = ("name", "id", "originator", "createTime")
+    if action == "list_sources":
+        sources = []
+        for source in provider.get("sources", []) or []:
+            github_repo = source.get("githubRepo") or {}
+            sources.append({
+                **_pick(source, ("name", "id")),
+                "githubRepo": _pick(github_repo, ("owner", "repo", "isPrivate", "defaultBranch")),
+            })
+        return {"sources": sources, "nextPageTokenPresent": bool(provider.get("nextPageToken"))}
+    if action == "list_sessions":
+        return {
+            "sessions": [_pick(item, session_keys) for item in provider.get("sessions", []) or []],
+            "nextPageTokenPresent": bool(provider.get("nextPageToken")),
+        }
+    if action == "get_session":
+        return _pick(provider, session_keys + ("sourceContext",))
+    if action == "list_activities":
+        activities = []
+        for item in provider.get("activities", []) or []:
+            summary = _pick(item, activity_keys)
+            summary["activityKinds"] = sorted(
+                key
+                for key in item
+                if key not in {"name", "id", "originator", "description", "createTime"} and item.get(key) is not None
+            )
+            activities.append(summary)
+        return {"activities": activities, "nextPageTokenPresent": bool(provider.get("nextPageToken"))}
+    raise RequestValidationError("unsupported read action")
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
@@ -49,7 +89,8 @@ def cmd_inspect(args: argparse.Namespace) -> int:
         "request_id": request.data["request_id"],
         "action": request.action,
         "provider_mutation_performed": False,
-        "provider_result": provider,
+        "provider_summary": _provider_summary(request.action, provider),
+        "raw_prompt_or_agent_text_persisted": False,
         "classification": "PASS",
     }
     write_json(args.output, envelope)
