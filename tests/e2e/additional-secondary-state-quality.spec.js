@@ -28,6 +28,18 @@ async function assertNoPageOverflow(page) {
   expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth + 1);
 }
 
+async function expectInsideViewport(page, locator) {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+}
+
 async function loginAdmin(page) {
   if (!adminEmail || !adminPassword) throw new Error('S09 admin CI identity is required.');
   await page.goto('/admin/login');
@@ -48,12 +60,16 @@ test('[QUALITY][SECONDARY] unavailable product option is explicit on mobile', as
   await expect(sand).toHaveAttribute('aria-pressed', 'true');
 
   const unavailableFinish = page.locator('[data-option-key="finish"][data-option-value="بلوط طبيعي"]');
+  const sku = page.getByTestId('variant-sku');
   await expect(unavailableFinish).toBeDisabled();
-  await expect(page.getByTestId('variant-sku')).toHaveText('BAS-CHAIR-SAND-01');
+  await expect(sku).toHaveText('BAS-CHAIR-SAND-01');
+  await unavailableFinish.scrollIntoViewIfNeeded();
+  await expectInsideViewport(page, unavailableFinish);
+  await expectInsideViewport(page, sku);
   await assertNoPageOverflow(page);
   expect(runtimeFailures).toEqual([]);
 
-  await page.screenshot({ path: path.join(outputDir, 'product-unavailable-option-390.png'), fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, 'product-unavailable-option-390.png'), fullPage: false });
 });
 
 test('[QUALITY][SECONDARY] admin login failure is explicit and runtime-clean', async ({ page }) => {
@@ -69,10 +85,11 @@ test('[QUALITY][SECONDARY] admin login failure is explicit and runtime-clean', a
   const alert = page.getByRole('alert');
   await expect(alert).toBeVisible();
   await expect(alert).toHaveText('بيانات الدخول غير صحيحة.');
+  await expectInsideViewport(page, alert);
   await assertNoPageOverflow(page);
   expect(runtimeFailures).toEqual([]);
 
-  await page.screenshot({ path: path.join(outputDir, 'admin-login-error-390.png'), fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, 'admin-login-error-390.png'), fullPage: false });
 });
 
 test('[QUALITY][SECONDARY] admin catalog no-results state is explicit on mobile', async ({ page }) => {
@@ -90,8 +107,10 @@ test('[QUALITY][SECONDARY] admin catalog no-results state is explicit on mobile'
   await expect(emptyState).toContainText('امسح الفلاتر');
   await expect(page.getByLabel('عدد المنتجات')).toContainText('0');
   await expect(page.getByTestId('catalog-table-wrap')).toHaveCount(0);
+  await emptyState.scrollIntoViewIfNeeded();
+  await expectInsideViewport(page, emptyState);
   await assertNoPageOverflow(page);
   expect(runtimeFailures).toEqual([]);
 
-  await page.screenshot({ path: path.join(outputDir, 'admin-catalog-no-results-390.png'), fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, 'admin-catalog-no-results-390.png'), fullPage: false });
 });
