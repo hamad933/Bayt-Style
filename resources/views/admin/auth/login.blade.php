@@ -19,7 +19,12 @@
             <div class="admin-alert admin-alert--error" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        <form class="admin-form" method="post" action="{{ route('admin.login.store') }}">
+        <form class="admin-form"
+              method="post"
+              action="{{ route('admin.login.store') }}"
+              x-data="{ submitting: false }"
+              @submit="if (submitting) { $event.preventDefault(); return; } submitting = true"
+              :aria-busy="submitting.toString()">
             @csrf
             <label class="admin-field">
                 <span>البريد الإلكتروني</span>
@@ -29,7 +34,18 @@
                 <span>كلمة المرور</span>
                 <input type="password" name="password" autocomplete="current-password" required>
             </label>
-            <button class="admin-primary-button" type="submit">دخول آمن</button>
+            <button class="admin-primary-button"
+                    type="submit"
+                    :disabled="submitting"
+                    :aria-busy="submitting.toString()">
+                <span x-text="submitting ? 'جارٍ الدخول…' : 'دخول آمن'">دخول آمن</span>
+            </button>
+            <p class="admin-help"
+               x-show="submitting"
+               x-cloak
+               role="status"
+               aria-live="polite"
+               aria-atomic="true">جارٍ التحقق من بيانات الدخول…</p>
         </form>
     </section>
 </main>
