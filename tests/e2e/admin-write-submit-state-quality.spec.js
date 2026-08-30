@@ -41,8 +41,9 @@ test('[QUALITY][STATE] S10 catalog inventory write exposes a truthful single-fli
     await expect(form).toBeVisible();
     await form.scrollIntoViewIfNeeded();
 
-    const button = form.getByRole('button', { name: 'تسجيل حركة المخزون' });
+    const button = form.locator('button[type="submit"]').first();
     await expect(button).toBeVisible();
+    await expect(button).toHaveText('تسجيل حركة المخزون');
     await expect(form).toHaveAttribute('aria-busy', 'false');
 
     await page.evaluate(() => {
