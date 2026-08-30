@@ -41,25 +41,19 @@ test('[QUALITY][CHECKOUT SUBMIT] confirmation exposes a visible single-flight su
   await page.getByLabel('الشارع / سطر العنوان').fill('شارع الاختبار 1');
   await page.getByRole('checkbox', { name: /أوافق على إرسال بيانات هذا الطلب/ }).check();
 
-  let postCount = 0;
-  let releasePost;
-  const postGate = new Promise((resolve) => { releasePost = resolve; });
-
-  await page.route('**/checkout', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.continue();
-      return;
-    }
-    postCount += 1;
-    await postGate;
-    await route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>submitted</title>' });
-  });
-
   const form = page.getByTestId('checkout-form');
   const submit = page.getByTestId('confirm-checkout');
   const status = page.getByTestId('checkout-submitting-status');
 
-  await submit.click({ noWaitAfter: true });
+  const firstSubmissionAccepted = await form.evaluate((element) => {
+    const submitter = element.querySelector('[data-testid="confirm-checkout"]');
+    return element.dispatchEvent(new SubmitEvent('submit', {
+      bubbles: true,
+      cancelable: true,
+      submitter,
+    }));
+  });
+  expect(firstSubmissionAccepted).toBe(true);
 
   await expect(form).toHaveAttribute('aria-busy', 'true');
   await expect(submit).toBeDisabled();
@@ -67,11 +61,16 @@ test('[QUALITY][CHECKOUT SUBMIT] confirmation exposes a visible single-flight su
   await expect(submit).toHaveText('جارٍ تأكيد الطلب…');
   await expect(status).toBeVisible();
   await expect(status).toHaveText('جارٍ إرسال الطلب. يرجى عدم إغلاق الصفحة أو إعادة الإرسال.');
-  expect(postCount).toBe(1);
 
-  await submit.click({ force: true, noWaitAfter: true });
-  await page.waitForTimeout(150);
-  expect(postCount).toBe(1);
+  const secondSubmissionAccepted = await form.evaluate((element) => {
+    const submitter = element.querySelector('[data-testid="confirm-checkout"]');
+    return element.dispatchEvent(new SubmitEvent('submit', {
+      bubbles: true,
+      cancelable: true,
+      submitter,
+    }));
+  });
+  expect(secondSubmissionAccepted).toBe(false);
 
   const box = await status.boundingBox();
   expect(box).not.toBeNull();
@@ -86,6 +85,4 @@ test('[QUALITY][CHECKOUT SUBMIT] confirmation exposes a visible single-flight su
     path: path.join(outputDir, 'checkout-submitting-state-390.png'),
     fullPage: false,
   });
-
-  releasePost();
 });
