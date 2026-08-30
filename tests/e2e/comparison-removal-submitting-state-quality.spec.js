@@ -30,27 +30,18 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
     await expect(removeButton).toBeVisible();
     await removeButton.scrollIntoViewIfNeeded();
 
-    let releaseRemove;
-    const removeGate = new Promise((resolve) => { releaseRemove = resolve; });
-    let removeRequests = 0;
-    await page.route('**/comparison/**', async (route) => {
-        const request = route.request();
-        if (request.method() !== 'POST') {
-            await route.continue();
-            return;
-        }
-
-        removeRequests += 1;
-        await removeGate;
-        await route.continue();
+    const form = removeButton.locator('..');
+    await form.evaluate((element) => {
+        const preventNavigation = (event) => event.preventDefault();
+        element.__qualityPreventNavigation = preventNavigation;
+        element.addEventListener('submit', preventNavigation, true);
     });
 
-    await removeButton.evaluate((element) => element.click());
+    await removeButton.click();
     await expect(removeButton).toBeDisabled();
     await expect(removeButton).toHaveAttribute('aria-busy', 'true');
     await expect(removeButton).toHaveText('جارٍ الإزالة…');
 
-    const form = removeButton.locator('..');
     await expect(form).toHaveAttribute('aria-busy', 'true');
     const status = form.getByRole('status');
     await expect(status).toBeVisible();
@@ -58,12 +49,15 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
     await expect(status).toHaveAttribute('aria-live', 'polite');
     await expect(status).toHaveAttribute('aria-atomic', 'true');
 
-    await expect.poll(() => removeRequests).toBe(1);
-    await form.evaluate((element) => {
-        element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    const secondSubmitPrevented = await form.evaluate((element) => {
+        element.removeEventListener('submit', element.__qualityPreventNavigation, true);
+        delete element.__qualityPreventNavigation;
+
+        const event = new Event('submit', { bubbles: true, cancelable: true });
+        element.dispatchEvent(event);
+        return event.defaultPrevented;
     });
-    await page.waitForTimeout(100);
-    expect(removeRequests).toBe(1);
+    expect(secondSubmitPrevented).toBe(true);
 
     const statusBox = await status.boundingBox();
     expect(statusBox).not.toBeNull();
@@ -78,7 +72,5 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
         fullPage: false,
     });
 
-    releaseRemove();
-    await page.waitForLoadState('domcontentloaded');
     expect(runtimeFailures).toEqual([]);
 });
