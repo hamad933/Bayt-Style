@@ -1,0 +1,43 @@
+name: RP01 Automation Foundation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/rp01_automation/**"
+      - "tests/Automation/**"
+      - "docs/automation/**"
+      - ".github/workflows/rp01-automation-*.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rp01-automation-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out exact proposal HEAD
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact proposal HEAD
+        if: github.event_name == 'pull_request'
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile control-plane modules
+        run: python -m compileall -q tools/rp01_automation tests/Automation
+      - name: Run automation safety tests
+        run: python -m unittest discover -s tests/Automation -p "test_*.py" -v
+      - name: Secret-literal guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RIE --exclude='*.md' 'AIza[0-9A-Za-z_-]{20,}' tools/rp01_automation tests/Automation .github/workflows/rp01-automation-*.yml
