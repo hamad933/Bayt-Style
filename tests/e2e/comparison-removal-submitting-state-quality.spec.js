@@ -30,16 +30,18 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
     await expect(removeButton).toBeVisible();
     await removeButton.scrollIntoViewIfNeeded();
 
-    let releaseDelete;
-    const deleteGate = new Promise((resolve) => { releaseDelete = resolve; });
-    let deleteRequests = 0;
+    let releaseRemove;
+    const removeGate = new Promise((resolve) => { releaseRemove = resolve; });
+    let removeRequests = 0;
     await page.route('**/comparison/**', async (route) => {
-        if (route.request().method() !== 'DELETE') {
+        const request = route.request();
+        if (request.method() !== 'POST') {
             await route.continue();
             return;
         }
-        deleteRequests += 1;
-        await deleteGate;
+
+        removeRequests += 1;
+        await removeGate;
         await route.continue();
     });
 
@@ -56,12 +58,12 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
     await expect(status).toHaveAttribute('aria-live', 'polite');
     await expect(status).toHaveAttribute('aria-atomic', 'true');
 
-    await expect.poll(() => deleteRequests).toBe(1);
+    await expect.poll(() => removeRequests).toBe(1);
     await form.evaluate((element) => {
         element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     });
     await page.waitForTimeout(100);
-    expect(deleteRequests).toBe(1);
+    expect(removeRequests).toBe(1);
 
     const statusBox = await status.boundingBox();
     expect(statusBox).not.toBeNull();
@@ -76,7 +78,7 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
         fullPage: false,
     });
 
-    releaseDelete();
+    releaseRemove();
     await page.waitForLoadState('domcontentloaded');
     expect(runtimeFailures).toEqual([]);
 });
