@@ -106,8 +106,10 @@
                     :aria-busy="busy.toString()"
                     :disabled="busy"
                     data-testid="detail-comparison"
-                ><span x-text="busy ? 'جارٍ التحديث…' : (compared ? 'إزالة من المقارنة' : 'أضف للمقارنة')">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span></button>
-                <span role="status" aria-live="polite" x-show="busy" x-cloak>جارٍ تحديث المقارنة…</span>
+                >
+                    <span x-show="!busy" x-text="compared ? 'إزالة من المقارنة' : 'أضف للمقارنة'">{{ $compared ? 'إزالة من المقارنة' : 'أضف للمقارنة' }}</span>
+                    <span role="status" aria-live="polite" x-show="busy" x-cloak>جارٍ تحديث المقارنة…</span>
+                </button>
             </div>
             <p class="inventory-boundary">إضافة القطعة إلى السلة لا تعني حجز المخزون.</p>
 
