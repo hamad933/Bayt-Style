@@ -1,0 +1,54 @@
+name: RP01 Automation Shadow Inspect
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_json:
+        description: Strict public-safe RP01 read request JSON
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rp01-automation-inspect-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: github.actor == github.repository_owner && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+      RP01_REQUEST_JSON: ${{ inputs.request_json }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Materialize request without shell interpolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$RUNNER_TEMP/rp01-automation"
+          python - <<'PY'
+          import os, pathlib
+          pathlib.Path(os.environ["RUNNER_TEMP"], "rp01-automation", "request.json").write_text(os.environ["RP01_REQUEST_JSON"] + "\n", encoding="utf-8")
+          PY
+      - name: Validate and execute read-only inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m tools.rp01_automation.cli inspect --request "$RUNNER_TEMP/rp01-automation/request.json" --output "$RUNNER_TEMP/rp01-automation/evidence.json"
+      - name: Upload sanitized inspection evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rp01-automation-inspect-${{ github.run_id }}
+          path: ${{ runner.temp }}/rp01-automation/
+          if-no-files-found: warn
+          retention-days: 14
