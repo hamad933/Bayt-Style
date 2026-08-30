@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+async function expectInsideViewport(page, locator) {
+    const box = await locator.boundingBox();
+    expect(box).not.toBeNull();
+
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+}
+
 test('quick add exposes a truthful busy state and suppresses duplicate submissions', async ({ page }) => {
     const pageErrors = [];
     const consoleErrors = [];
@@ -34,6 +46,7 @@ test('quick add exposes a truthful busy state and suppresses duplicate submissio
     await expect(quickAdd).toHaveText('جارٍ الإضافة…');
     await expect(quickAdd).toHaveAttribute('aria-busy', 'true');
     await quickAdd.scrollIntoViewIfNeeded();
+    await expectInsideViewport(page, quickAdd);
     await page.screenshot({ path: 'storage/test-artifacts/quick-add-busy-390.png', fullPage: false });
 
     await quickAdd.dispatchEvent('click');
@@ -65,14 +78,19 @@ test('quick add recovers from an expected request rejection and shows the user t
         });
     });
 
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
     const quickAdd = page.locator('[data-testid^="quick-add-"]').first();
     await expect(quickAdd).toBeVisible();
     await quickAdd.click();
 
-    await expect(page.locator('.toast')).toBeVisible();
-    await expect(page.locator('.toast')).toHaveText('تعذر إضافة القطعة الآن.');
+    const toast = page.locator('.toast');
+    await expect(toast).toBeVisible();
+    await expect(toast).toHaveText('تعذر إضافة القطعة الآن.');
+    await expect.poll(() => toast.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+    await expectInsideViewport(page, toast);
+    await page.screenshot({ path: 'storage/test-artifacts/quick-add-error-390.png', fullPage: false });
     await expect(quickAdd).toBeEnabled();
     await expect(quickAdd).toHaveText('أضف إلى السلة');
     await expect(quickAdd).toHaveAttribute('aria-busy', 'false');
