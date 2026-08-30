@@ -26,9 +26,21 @@
         </nav>
         <div class="admin-sidebar__foot">
             <p class="admin-identity"><span>المستخدم</span><strong>{{ auth()->user()->name }}</strong><small>{{ auth()->user()->email }}</small></p>
-            <form method="post" action="{{ route('admin.logout') }}">
+            <form method="post"
+                  action="{{ route('admin.logout') }}"
+                  x-data="{ submitting: false }"
+                  @submit="if (submitting) { $event.preventDefault(); return; } submitting = true"
+                  :aria-busy="submitting ? 'true' : 'false'">
                 @csrf
-                <button class="admin-link-button" type="submit">تسجيل الخروج</button>
+                <button class="admin-link-button"
+                        type="submit"
+                        :disabled="submitting"
+                        :aria-busy="submitting ? 'true' : 'false'"
+                        x-text="submitting ? 'جارٍ تسجيل الخروج…' : 'تسجيل الخروج'">تسجيل الخروج</button>
+                <small role="status"
+                       aria-live="polite"
+                       aria-atomic="true"
+                       x-text="submitting ? 'جارٍ إنهاء الجلسة بأمان…' : ''"></small>
             </form>
         </div>
     </aside>
