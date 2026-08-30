@@ -65,9 +65,8 @@ test('[QUALITY][STATE] comparison removal exposes one truthful visible submittin
 
     const statusBox = await status.boundingBox();
     expect(statusBox).not.toBeNull();
-    const viewport = await page.evaluate(() => ({ top: window.scrollY, bottom: window.scrollY + window.innerHeight }));
-    expect(statusBox.y).toBeGreaterThanOrEqual(viewport.top - 1);
-    expect(statusBox.y + statusBox.height).toBeLessThanOrEqual(viewport.bottom + 1);
+    expect(statusBox.y).toBeGreaterThanOrEqual(-1);
+    expect(statusBox.y + statusBox.height).toBeLessThanOrEqual(845);
     const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
     expect(hasHorizontalOverflow).toBe(false);
 
