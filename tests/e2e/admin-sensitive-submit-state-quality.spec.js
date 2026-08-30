@@ -42,8 +42,9 @@ test('[QUALITY][STATE] S10 sensitive admin action exposes a truthful single-flig
     await expect(form).toBeVisible();
     await form.scrollIntoViewIfNeeded();
 
-    const button = form.getByRole('button', { name: 'إلغاء الطلب فقط' });
+    const button = form.locator('button[type="submit"], button:not([type])').first();
     await expect(button).toBeVisible();
+    await expect(button).toHaveText('إلغاء الطلب فقط');
     await expect(form).toHaveAttribute('aria-busy', 'false');
 
     await page.evaluate(() => {
