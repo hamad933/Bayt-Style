@@ -88,8 +88,9 @@
                     <output x-text="quantity" data-testid="quantity-value">1</output>
                     <button type="button" @click="increase" :disabled="quantity >= 10" aria-label="زيادة الكمية">+</button>
                 </div>
-                <button class="button button-primary add-cart" type="button" @click="addToCart" :disabled="adding || !canAdd" data-testid="add-to-cart">
-                    <span x-show="!adding">أضف إلى السلة</span><span x-show="adding">جارٍ الإضافة…</span>
+                <button class="button button-primary add-cart" type="button" @click="addToCart" :disabled="adding || !canAdd" :aria-busy="adding.toString()" data-testid="add-to-cart">
+                    <span x-show="!adding">أضف إلى السلة</span>
+                    <span role="status" aria-live="polite" aria-atomic="true" x-show="adding" x-cloak>جارٍ الإضافة…</span>
                 </button>
             </div>
 
