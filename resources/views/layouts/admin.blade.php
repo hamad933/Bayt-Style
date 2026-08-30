@@ -37,9 +37,9 @@
                         :disabled="submitting"
                         :aria-busy="submitting ? 'true' : 'false'"
                         x-text="submitting ? 'جارٍ تسجيل الخروج…' : 'تسجيل الخروج'">تسجيل الخروج</button>
-                <small role="status"
-                       aria-live="polite"
-                       aria-atomic="true"
+                <small :role="submitting ? 'status' : null"
+                       :aria-live="submitting ? 'polite' : null"
+                       :aria-atomic="submitting ? 'true' : null"
                        x-text="submitting ? 'جارٍ إنهاء الجلسة بأمان…' : ''"></small>
             </form>
         </div>
